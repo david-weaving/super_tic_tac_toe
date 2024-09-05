@@ -21,7 +21,7 @@
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 10px;
-            height: 24px; /* Fixed height to prevent layout shift */
+            height: 24px;
         }
         #game-board {
             display: grid;
@@ -84,6 +84,39 @@
         #play-again:hover {
             background-color: #45a049;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -94,11 +127,29 @@
         <button id="play-again">Play Again</button>
     </div>
 
+    <div id="howToPlayModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>How to Play Super Tic-Tac-Toe</h2>
+            <ol>
+                <li>The game is played on a 3x3 grid of 3x3 Tic-Tac-Toe boards.</li>
+                <li>To start, Player 1  can place their X mark in any cell on any board.</li>
+                <li>The board where the next player must play is determined by the cell chosen by the previous player. For example, if a player places their mark in the top-left cell of any board, the next player must play in the top-left board.</li>
+                <li>If a player is sent to a board that is already won or full, they can choose any available cell on any board.</li>
+                <li>To win a small board, get three of your marks in a row (horizontally, vertically, or diagonally).</li>
+                <li>To win the game, win three small boards in a row (horizontally, vertically, or diagonally).</li>
+            </ol>
+            <p>Have fun!</p>
+        </div>
+    </div>
+
     <script>
         const gameBoard = document.getElementById('game-board');
         const statusDisplay = document.getElementById('status');
         const messageDisplay = document.getElementById('message');
         const playAgainButton = document.getElementById('play-again');
+        const modal = document.getElementById('howToPlayModal');
+        const closeButton = document.getElementsByClassName('close')[0];
         let currentPlayer = 'X';
         let boardTracker = 4;
         let gameActive = true;
@@ -226,6 +277,23 @@
             statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
             messageDisplay.textContent = '';
             playAgainButton.style.display = 'none';
+        }
+
+        // Show the modal when the page loads
+        window.onload = function() {
+            modal.style.display = "block";
+        }
+
+        // Close the modal when the close button is clicked
+        closeButton.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Close the modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
         }
 
         createBoard();
