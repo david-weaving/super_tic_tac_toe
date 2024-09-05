@@ -17,6 +17,12 @@
         #game-container {
             text-align: center;
         }
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            height: 24px; /* Fixed height to prevent layout shift */
+        }
         #game-board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -51,6 +57,14 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
+        .won-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 100px;
+            font-weight: bold;
+            background-color: #fff;
+        }
         #status {
             margin-top: 20px;
             font-size: 24px;
@@ -74,6 +88,7 @@
 </head>
 <body>
     <div id="game-container">
+        <div id="message"></div>
         <div id="game-board"></div>
         <div id="status"></div>
         <button id="play-again">Play Again</button>
@@ -82,6 +97,7 @@
     <script>
         const gameBoard = document.getElementById('game-board');
         const statusDisplay = document.getElementById('status');
+        const messageDisplay = document.getElementById('message');
         const playAgainButton = document.getElementById('play-again');
         let currentPlayer = 'X';
         let boardTracker = 4;
@@ -94,6 +110,7 @@
             for (let i = 0; i < 9; i++) {
                 const bigCell = document.createElement('div');
                 bigCell.classList.add('big-cell');
+                bigCell.dataset.bigCell = i;
                 for (let j = 0; j < 9; j++) {
                     const smallCell = document.createElement('button');
                     smallCell.classList.add('small-cell');
@@ -114,7 +131,7 @@
             if (!gameActive || typeof theGame[bigCell][smallCell] === 'string') return;
 
             if (boardTracker !== -1 && bigCell !== boardTracker && !theGame[boardTracker].every(cell => typeof cell === 'string')) {
-                alert(`You must play in board ${boardTracker + 1}`);
+                messageDisplay.textContent = `You must play in board ${boardTracker + 1}`;
                 return;
             }
 
@@ -127,6 +144,7 @@
                 gameActive = false;
                 statusDisplay.textContent = `Player ${currentPlayer} wins!`;
                 playAgainButton.style.display = 'inline-block';
+                messageDisplay.textContent = '';
                 return;
             }
 
@@ -135,8 +153,10 @@
             statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
 
             if (theGame[boardTracker].every(cell => typeof cell === 'string')) {
-                alert(`Board ${boardTracker + 1} is full. You can now play in any available board.`);
+                messageDisplay.textContent = "You can play in any available board for this turn";
                 boardTracker = -1;
+            } else {
+                messageDisplay.textContent = '';
             }
 
             updateBoardStates();
@@ -151,15 +171,18 @@
 
             for (let condition of winConditions) {
                 if (condition.every(index => theGame[boardTracker][index] === currentPlayer)) {
-                    alert(`Tile ${boardTracker + 1} has been taken by ${currentPlayer}!`);
                     theGame[boardTracker].fill(currentPlayer);
-                    document.querySelectorAll(`.small-cell[data-big-cell="${boardTracker}"]`).forEach(cell => {
-                        cell.textContent = currentPlayer;
-                        cell.disabled = true;
-                    });
+                    replaceWithLargeLetter(boardTracker, currentPlayer);
                     break;
                 }
             }
+        }
+
+        function replaceWithLargeLetter(boardTracker, player) {
+            const bigCell = document.querySelector(`.big-cell[data-big-cell="${boardTracker}"]`);
+            bigCell.innerHTML = '';
+            bigCell.classList.add('won-cell');
+            bigCell.textContent = player;
         }
 
         function checkWin() {
@@ -201,6 +224,7 @@
             createBoard();
             updateBoardStates();
             statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            messageDisplay.textContent = '';
             playAgainButton.style.display = 'none';
         }
 
