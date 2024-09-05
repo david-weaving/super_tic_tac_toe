@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .big-cell {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            background-color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .small-cell {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            background-color: #eee;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .small-cell:hover {
+            background-color: #ddd;
+        }
+        .small-cell:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        #status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="game-board"></div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const statusDisplay = document.getElementById('status');
+        let currentPlayer = 'X';
+        let boardTracker = 4;
+        let gameActive = true;
+
+        const theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
+
+        function createBoard() {
+            for (let i = 0; i < 9; i++) {
+                const bigCell = document.createElement('div');
+                bigCell.classList.add('big-cell');
+                for (let j = 0; j < 9; j++) {
+                    const smallCell = document.createElement('button');
+                    smallCell.classList.add('small-cell');
+                    smallCell.dataset.bigCell = i;
+                    smallCell.dataset.smallCell = j;
+                    smallCell.textContent = theGame[i][j];
+                    smallCell.addEventListener('click', handleCellClick);
+                    bigCell.appendChild(smallCell);
+                }
+                gameBoard.appendChild(bigCell);
+            }
+        }
+
+        function handleCellClick(event) {
+            const bigCell = parseInt(event.target.dataset.bigCell);
+            const smallCell = parseInt(event.target.dataset.smallCell);
+
+            if (!gameActive || typeof theGame[bigCell][smallCell] === 'string') return;
+
+            if (boardTracker !== -1 && bigCell !== boardTracker && !theGame[boardTracker].every(cell => typeof cell === 'string')) {
+                alert(`You must play in board ${boardTracker + 1}`);
+                return;
+            }
+
+            theGame[bigCell][smallCell] = currentPlayer;
+            event.target.textContent = currentPlayer;
+            event.target.disabled = true;
+
+            checkEntireTile(bigCell);
+            if (checkWin()) {
+                gameActive = false;
+                statusDisplay.textContent = `Player ${currentPlayer} wins!`;
+                return;
+            }
+
+            boardTracker = smallCell;
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+
+            if (theGame[boardTracker].every(cell => typeof cell === 'string')) {
+                alert(`Board ${boardTracker + 1} is full. You can now play in any available board.`);
+                boardTracker = -1;
+            }
+
+            updateBoardStates();
+        }
+
+        function checkEntireTile(boardTracker) {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (let condition of winConditions) {
+                if (condition.every(index => theGame[boardTracker][index] === currentPlayer)) {
+                    alert(`Tile ${boardTracker + 1} has been taken by ${currentPlayer}!`);
+                    theGame[boardTracker].fill(currentPlayer);
+                    document.querySelectorAll(`.small-cell[data-big-cell="${boardTracker}"]`).forEach(cell => {
+                        cell.textContent = currentPlayer;
+                        cell.disabled = true;
+                    });
+                    break;
+                }
+            }
+        }
+
+        function checkWin() {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (let condition of winConditions) {
+                if (condition.every(index => 
+                    theGame[index].every(cell => cell === currentPlayer)
+                )) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function updateBoardStates() {
+            document.querySelectorAll('.small-cell').forEach(cell => {
+                const bigCell = parseInt(cell.dataset.bigCell);
+                const smallCell = parseInt(cell.dataset.smallCell);
+                
+                if (boardTracker === -1 || bigCell === boardTracker) {
+                    cell.disabled = typeof theGame[bigCell][smallCell] === 'string';
+                } else {
+                    cell.disabled = true;
+                }
+            });
+        }
+
+        createBoard();
+        updateBoardStates();
+        statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+    </script>
+</body>
+</html>
