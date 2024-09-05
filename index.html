@@ -14,6 +14,9 @@
             margin: 0;
             background-color: #f0f0f0;
         }
+        #game-container {
+            text-align: center;
+        }
         #game-board {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -21,6 +24,7 @@
             background-color: #333;
             padding: 10px;
             border-radius: 10px;
+            margin-bottom: 20px;
         }
         .big-cell {
             display: grid;
@@ -48,29 +52,45 @@
             opacity: 0.7;
         }
         #status {
-            text-align: center;
             margin-top: 20px;
             font-size: 24px;
             font-weight: bold;
         }
+        #play-again {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        #play-again:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
-    <div>
+    <div id="game-container">
         <div id="game-board"></div>
         <div id="status"></div>
+        <button id="play-again">Play Again</button>
     </div>
 
     <script>
         const gameBoard = document.getElementById('game-board');
         const statusDisplay = document.getElementById('status');
+        const playAgainButton = document.getElementById('play-again');
         let currentPlayer = 'X';
         let boardTracker = 4;
         let gameActive = true;
 
-        const theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
+        let theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
 
         function createBoard() {
+            gameBoard.innerHTML = '';
             for (let i = 0; i < 9; i++) {
                 const bigCell = document.createElement('div');
                 bigCell.classList.add('big-cell');
@@ -106,6 +126,7 @@
             if (checkWin()) {
                 gameActive = false;
                 statusDisplay.textContent = `Player ${currentPlayer} wins!`;
+                playAgainButton.style.display = 'inline-block';
                 return;
             }
 
@@ -172,9 +193,21 @@
             });
         }
 
+        function resetGame() {
+            currentPlayer = 'X';
+            boardTracker = 4;
+            gameActive = true;
+            theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
+            createBoard();
+            updateBoardStates();
+            statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            playAgainButton.style.display = 'none';
+        }
+
         createBoard();
         updateBoardStates();
         statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+        playAgainButton.addEventListener('click', resetGame);
     </script>
 </body>
 </html>
