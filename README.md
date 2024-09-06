@@ -13,3 +13,6 @@ The first player will start by placing their X on any cell in the center tile.
 The next player takes their turn in the tile that corresponds to the cell the previous player played in.
 
 For example, if player 'X' starts their turn by playing in the top left cell, then player 'O' has to play in the top left tile:
+
+
+![Example2](./images/for_ttt2.JPG)
