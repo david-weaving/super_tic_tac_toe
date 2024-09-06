@@ -21,6 +21,8 @@ For example, if player 'X' starts their turn by playing in the top left cell, th
 
 Once 3 cells in a tile have been taken in a row, the tile becomes either an 'X' or 'O' based on which player took it.
 
+If a player is pushed to a tile that has already been taken (or completely filled), they get to choose ANY available space on the entire board to place.
+
 Getting 3 tiles of the same letter in a row wins the game!
 
 The game is meant to be played locally with someone in person, or to be streamed to someone else (hence the numbers in the cells for convience). I am currently working on an online version. In the meantime, you can find the local version here: [Super Tic-Tac-Toe](https://david-weaving.github.io/super_tic_tac_toe/)
