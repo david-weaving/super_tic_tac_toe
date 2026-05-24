@@ -564,7 +564,7 @@
     <span class="line1">SUPER</span>
     <span class="line2">TIC&middot;TAC&middot;TOE</span>
   </h1>
-  <div><span class="version-badge">v2.0</span></div>
+  <div><span class="version-badge">v2.1</span></div>
 </div>
 
 <!-- LOBBY -->
@@ -655,7 +655,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-console.log("%cSuper Tic-Tac-Toe v2.0 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
+console.log("%cSuper Tic-Tac-Toe v2.1 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
 
 // ============================================================
 // DOM
@@ -828,28 +828,47 @@ joinBtn.addEventListener('click', async () => {
   spinnerOn(joinBtn, joinLabel);
 
   try {
-    // Use a transaction: atomically claim the guest slot and write the coin flip
+    // First, verify the room exists with a direct read.
+    // runTransaction starts with a guess of null which would cause us to
+    // erroneously abort if we treated null as "doesn't exist".
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (!snap.exists()) {
+      lobbyError.textContent = "Room not found.";
+      spinnerOff(joinBtn, joinLabel);
+      return;
+    }
+    if (snap.val().guest) {
+      lobbyError.textContent = "Room is full.";
+      spinnerOff(joinBtn, joinLabel);
+      return;
+    }
+
+    // Now do the atomic claim. The 2nd arg flag `applyLocally: false` would
+    // skip the optimistic null guess, but it's not exposed in the SDK.
+    // Instead, we just don't abort on null — we wait for the real server value.
     const result = await runTransaction(ref(db, `rooms/${code}`), (current) => {
-      if (current === null) return; // doesn't exist; abort
-      if (!current.host) return;    // host left; abort
-      if (current.guest) return;    // full; abort
+      // First call may pass `null` as Firebase's optimistic guess. Return
+      // a placeholder so the transaction retries with real server data.
+      if (current === null) return current; // keep going, don't abort
+      if (!current.host) return; // host left; abort
+      if (current.guest) return; // someone else got there first; abort
       current.guest = true;
-      // Coin flip: 50/50. heads = host is X, tails = guest is X.
       const heads = Math.random() < 0.5;
       current.coinFlip = {
         result: heads ? 'heads' : 'tails',
         hostSymbol: heads ? 'X' : 'O',
         guestSymbol: heads ? 'O' : 'X',
-        firstPlayer: 'X', // X always goes first per the original rules
+        firstPlayer: 'X',
         flippedAt: Date.now()
       };
       return current;
     });
 
     if (!result.committed) {
-      const snap = await get(ref(db, `rooms/${code}`));
-      if (!snap.exists()) lobbyError.textContent = "Room not found.";
-      else if (snap.val().guest) lobbyError.textContent = "Room is full.";
+      // Re-read to give a useful message
+      const s2 = await get(ref(db, `rooms/${code}`));
+      if (!s2.exists()) lobbyError.textContent = "Room no longer exists.";
+      else if (s2.val().guest) lobbyError.textContent = "Room is full.";
       else lobbyError.textContent = "Couldn't join. Try again.";
       spinnerOff(joinBtn, joinLabel);
       return;
@@ -859,9 +878,9 @@ joinBtn.addEventListener('click', async () => {
     myRole = 'guest';
     onDisconnect(ref(db, `rooms/${roomCode}/guest`)).set(false);
 
-    // We'll learn our symbol from the coinFlip block we just wrote
     enterCoinFlip();
   } catch (err) {
+    console.error("Join error:", err);
     lobbyError.textContent = err.message || "Couldn't join. Try again.";
     spinnerOff(joinBtn, joinLabel);
   }
