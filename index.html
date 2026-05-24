@@ -380,6 +380,7 @@
   .board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 6px;
     background: var(--ink);
     padding: 6px;
@@ -388,27 +389,34 @@
     aspect-ratio: 1;
     width: 100%;
     margin-bottom: 18px;
+    /* Lock the grid layout: each track is fr-sized, ignore content. */
+    min-width: 0;
   }
   .big-cell {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 2px;
     background: var(--paper-dark);
     padding: 4px;
     position: relative;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease;
+    /* Force the cell to fill its grid track regardless of content */
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
   }
   .big-cell.active {
     background: var(--yellow);
-    transform: scale(1.01);
-    z-index: 1;
   }
   .small-cell {
     aspect-ratio: 1;
     width: 100%;
     height: auto;
+    min-width: 0;
+    min-height: 0;
     font-family: 'Archivo Black', sans-serif;
-    font-size: clamp(14px, 3.5vw, 22px);
+    font-size: clamp(10px, 2.5vw, 18px);
     border: none;
     background: var(--paper);
     cursor: pointer;
@@ -420,6 +428,7 @@
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
+    overflow: hidden;
   }
   .big-cell.active .small-cell {
     background: var(--paper);
@@ -434,7 +443,7 @@
   .small-cell:disabled { cursor: not-allowed; }
   .small-cell.played {
     opacity: 1;
-    font-size: clamp(20px, 5vw, 32px);
+    font-size: clamp(14px, 4vw, 24px);
   }
   .small-cell.played-x {
     background: var(--red) !important;
@@ -447,23 +456,35 @@
     border-color: var(--ink);
   }
 
-  .big-cell.won {
+  /* When a board is won, we OVERLAY a big letter on top.
+     We do NOT change the .big-cell layout — that would re-size the grid track. */
+  .winner-overlay {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Archivo Black', sans-serif;
-    font-size: clamp(70px, 18vw, 120px);
+    font-size: clamp(40px, 14vw, 90px);
     line-height: 1;
-    /* IMPORTANT: no border — the parent grid sets the cell size and an
-       added border throws everything off. Use inset box-shadow instead. */
-    box-shadow: inset 0 0 0 3px var(--ink);
-    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 2;
     animation: stamp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    overflow: hidden;
   }
-  .big-cell.won .small-cell { display: none; }
-  .big-cell.won.won-x { background: var(--red); color: var(--paper); }
-  .big-cell.won.won-o { background: var(--blue); color: var(--paper); }
+  .winner-overlay.x { background: var(--red); color: var(--paper); box-shadow: inset 0 0 0 3px var(--ink); }
+  .winner-overlay.o { background: var(--blue); color: var(--paper); box-shadow: inset 0 0 0 3px var(--ink); }
+  .winner-overlay.t {
+    background: var(--paper-dark);
+    color: var(--ink);
+    opacity: 0.7;
+    font-size: clamp(20px, 6vw, 40px);
+    box-shadow: inset 0 0 0 3px var(--ink);
+  }
+  @keyframes stamp {
+    0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
   @keyframes stamp {
     0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
     60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
@@ -563,7 +584,7 @@
     <span class="line1">SUPER</span>
     <span class="line2">TIC&middot;TAC&middot;TOE</span>
   </h1>
-  <div><span class="version-badge">v2.2</span></div>
+  <div><span class="version-badge">v2.3</span></div>
 </div>
 
 <!-- LOBBY -->
@@ -654,7 +675,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-console.log("%cSuper Tic-Tac-Toe v2.2 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
+console.log("%cSuper Tic-Tac-Toe v2.3 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
 
 // ============================================================
 // DOM
@@ -957,9 +978,9 @@ function playCoinFlip(flipData) {
   mySymbol = (myRole === 'host') ? flipData.hostSymbol : flipData.guestSymbol;
   const theirSymbol = mySymbol === 'X' ? 'O' : 'X';
 
+  console.log(`[coin flip] role=${myRole}, mySymbol=${mySymbol}, theirSymbol=${theirSymbol}, flipData=`, flipData);
+
   // Set up the two coin faces FROM MY perspective.
-  // The "heads" face is what lands face-up at the end — make it MY symbol.
-  // The "tails" face is the back — make it the OPPONENT's symbol.
   const headsFace = document.getElementById('coin-heads');
   const tailsFace = document.getElementById('coin-tails');
 
@@ -970,12 +991,10 @@ function playCoinFlip(flipData) {
   tailsFace.className = 'coin-face tails ' + (theirSymbol === 'X' ? 'is-x' : 'is-o');
 
   // Reset any prior state and trigger the spin.
-  // We always land on "heads" since that's our personalized symbol.
   coinEl.className = 'coin';
   requestAnimationFrame(() => {
-    // Tiny double-rAF to let the browser pick up the reset before transitioning
     requestAnimationFrame(() => {
-      coinEl.classList.add('flipping', 'heads');
+      coinEl.classList.add('flipping');
     });
   });
 
@@ -986,11 +1005,10 @@ function playCoinFlip(flipData) {
       ? `YOU'RE ${mySymbol} · YOU GO FIRST`
       : `YOU'RE ${mySymbol} · OPPONENT GOES FIRST`;
     coinResultText.classList.remove('show', 'winner-me', 'winner-other');
-    void coinResultText.offsetWidth; // restart any transitions
+    void coinResultText.offsetWidth;
     coinResultText.classList.add('show', iGoFirst ? 'winner-me' : 'winner-other');
   }, 2500);
 
-  // Move to game after a beat
   setTimeout(() => {
     enterGame();
   }, 4500);
@@ -1021,48 +1039,45 @@ function buildBoard() {
 function renderBoard() {
   for (let b = 0; b < 9; b++) {
     const big = boardEl.children[b];
+    if (!big) continue;
     const w = miniWinners[b];
-    big.classList.remove('won', 'won-x', 'won-o', 'active');
 
-    if (w && w !== 'T') {
-      big.classList.add('won', w === 'X' ? 'won-x' : 'won-o');
-      // Remove cells and add the big letter
-      if (!big.querySelector('.winner-letter')) {
-        big.innerHTML = '';
-        big.textContent = w;
+    big.classList.remove('active');
+
+    // Manage the winner overlay (a separate child on top of the grid)
+    let overlay = big.querySelector('.winner-overlay');
+    if (w === 'X' || w === 'O' || w === 'T') {
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'winner-overlay';
+        big.appendChild(overlay);
       }
-    } else {
-      // Make sure cells exist (re-create if needed e.g. after a replay)
-      if (big.children.length !== 9 || !big.querySelector('.small-cell')) {
-        big.innerHTML = '';
-        big.textContent = '';
-        for (let c = 0; c < 9; c++) {
-          const cell = document.createElement('button');
-          cell.className = 'small-cell';
-          cell.dataset.board = b;
-          cell.dataset.cell = c;
-          cell.textContent = c + 1;
-          cell.addEventListener('click', onCellClick);
-          big.appendChild(cell);
-        }
-      }
+      overlay.classList.remove('x', 'o', 't');
+      if (w === 'X') { overlay.classList.add('x'); overlay.textContent = 'X'; }
+      else if (w === 'O') { overlay.classList.add('o'); overlay.textContent = 'O'; }
+      else { overlay.classList.add('t'); overlay.textContent = 'TIE'; }
+    } else if (overlay) {
+      overlay.remove();
+    }
 
-      const myTurn = currentPlayer === mySymbol && !winner;
-      const boardOpen = nextBoard === -1 || nextBoard === b;
-      if (myTurn && boardOpen && !w) big.classList.add('active');
+    // Active board indicator
+    const myTurn = currentPlayer === mySymbol && !winner;
+    const boardOpen = nextBoard === -1 || nextBoard === b;
+    if (myTurn && boardOpen && !w) big.classList.add('active');
 
-      for (let c = 0; c < 9; c++) {
-        const cell = big.children[c];
-        const v = cells[b][c];
-        if (v === 'X' || v === 'O') {
-          cell.textContent = v;
-          cell.classList.add('played', v === 'X' ? 'played-x' : 'played-o');
-          cell.disabled = true;
-        } else {
-          cell.textContent = c + 1;
-          cell.classList.remove('played', 'played-x', 'played-o');
-          cell.disabled = !myTurn || !boardOpen || !!w;
-        }
+    // Update each cell
+    for (let c = 0; c < 9; c++) {
+      const cell = big.children[c];
+      if (!cell || !cell.classList || !cell.classList.contains('small-cell')) continue;
+      const v = cells[b][c];
+      cell.classList.remove('played', 'played-x', 'played-o');
+      if (v === 'X' || v === 'O') {
+        cell.textContent = v;
+        cell.classList.add('played', v === 'X' ? 'played-x' : 'played-o');
+        cell.disabled = true;
+      } else {
+        cell.textContent = c + 1;
+        cell.disabled = !!w || !myTurn || !boardOpen;
       }
     }
   }
