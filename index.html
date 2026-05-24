@@ -1,801 +1,583 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Super Tic-Tac-Toe</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0e0e12;
-    --panel: #16161d;
-    --ink: #f5f3ec;
-    --muted: #6b6b78;
-    --line: #2a2a36;
-    --x: #ff5b3a;
-    --o: #4ad6ff;
-    --accent: #ffd23f;
-    --win-x: rgba(255, 91, 58, 0.18);
-    --win-o: rgba(74, 214, 255, 0.18);
-  }
-
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: 'JetBrains Mono', monospace;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 16px 32px;
-    background-image:
-      radial-gradient(circle at 20% 0%, rgba(255, 91, 58, 0.08), transparent 40%),
-      radial-gradient(circle at 80% 100%, rgba(74, 214, 255, 0.08), transparent 40%);
-  }
-
-  h1 {
-    font-family: 'Bungee', sans-serif;
-    font-size: clamp(28px, 6vw, 44px);
-    margin: 0 0 4px;
-    letter-spacing: 2px;
-    line-height: 1;
-  }
-  h1 .x { color: var(--x); }
-  h1 .o { color: var(--o); }
-  .tagline {
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 24px;
-  }
-
-  /* ---------- LOBBY ---------- */
-  .lobby {
-    width: 100%;
-    max-width: 420px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 28px 24px;
-  }
-  .lobby h2 {
-    font-family: 'Bungee', sans-serif;
-    font-size: 18px;
-    margin: 0 0 16px;
-    letter-spacing: 1px;
-  }
-  .lobby .btn {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  .lobby .divider {
-    display: flex;
-    align-items: center;
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 2px;
-    margin: 18px 0;
-  }
-  .lobby .divider::before, .lobby .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--line);
-  }
-  .lobby .divider::before { margin-right: 12px; }
-  .lobby .divider::after { margin-left: 12px; }
-
-  .btn {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 14px 18px;
-    border: none;
-    border-radius: 8px;
-    background: var(--ink);
-    color: var(--bg);
-    cursor: pointer;
-    transition: transform 0.08s ease, opacity 0.2s ease;
-  }
-  .btn:hover { transform: translateY(-1px); }
-  .btn:active { transform: translateY(0); }
-  .btn.ghost {
-    background: transparent;
-    color: var(--ink);
-    border: 1px solid var(--line);
-  }
-  .btn.accent { background: var(--accent); color: var(--bg); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .input-row { display: flex; gap: 8px; }
-  .code-input {
-    flex: 1;
-    font-family: 'Bungee', sans-serif;
-    font-size: 22px;
-    letter-spacing: 8px;
-    text-align: center;
-    text-transform: uppercase;
-    padding: 12px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--ink);
-    outline: none;
-  }
-  .code-input:focus { border-color: var(--accent); }
-
-  .name-input {
-    width: 100%;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    padding: 12px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--ink);
-    outline: none;
-    margin-bottom: 16px;
-  }
-  .name-input:focus { border-color: var(--accent); }
-
-  /* ---------- WAITING ---------- */
-  .waiting {
-    text-align: center;
-    width: 100%;
-    max-width: 420px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 28px 24px;
-  }
-  .room-code-display {
-    font-family: 'Bungee', sans-serif;
-    font-size: 56px;
-    letter-spacing: 12px;
-    color: var(--accent);
-    margin: 14px 0 6px;
-    cursor: pointer;
-    user-select: all;
-  }
-  .copy-hint { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 22px; }
-  .dots::after {
-    content: '';
-    animation: dots 1.4s infinite;
-  }
-  @keyframes dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
-  }
-
-  /* ---------- GAME ---------- */
-  .game { width: 100%; max-width: 540px; display: none; }
-  .game.active { display: block; }
-
-  .scoreboard {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 14px;
-    padding: 10px 14px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-  }
-  .player-tag { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .player-tag.right { align-items: flex-end; }
-  .player-tag .mark {
-    font-family: 'Bungee', sans-serif;
-    font-size: 20px;
-    line-height: 1;
-  }
-  .player-tag .mark.x { color: var(--x); }
-  .player-tag .mark.o { color: var(--o); }
-  .player-tag .name {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .player-tag.active .name { color: var(--ink); }
-  .player-tag.active .mark { text-shadow: 0 0 20px currentColor; }
-  .vs { font-size: 11px; color: var(--muted); letter-spacing: 2px; }
-
-  .status-bar {
-    text-align: center;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 10px;
-    color: var(--muted);
-    min-height: 32px;
-  }
-  .status-bar.urgent { color: var(--accent); }
-
-  .board {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    aspect-ratio: 1;
-    width: 100%;
-    background: var(--line);
-    padding: 6px;
-    border-radius: 12px;
-  }
-
-  .mini-board {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    background: var(--bg);
-    border-radius: 6px;
-    padding: 4px;
-    transition: background 0.25s ease, box-shadow 0.25s ease;
-  }
-  .mini-board.active {
-    background: var(--panel);
-    box-shadow: inset 0 0 0 2px var(--accent);
-  }
-  .mini-board.won-x { background: var(--win-x); }
-  .mini-board.won-o { background: var(--win-o); }
-
-  .cell {
-    aspect-ratio: 1;
-    background: var(--panel);
-    border: none;
-    border-radius: 3px;
-    font-family: 'Bungee', sans-serif;
-    font-size: clamp(14px, 4vw, 22px);
-    cursor: pointer;
-    color: transparent;
-    transition: background 0.15s ease, transform 0.1s ease;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .cell.x { color: var(--x); }
-  .cell.o { color: var(--o); }
-  .cell:not(:disabled):hover { background: var(--line); }
-  .cell:not(:disabled):active { transform: scale(0.92); }
-  .cell:disabled { cursor: not-allowed; }
-  .mini-board:not(.active) .cell:not(:disabled) { opacity: 0.5; }
-
-  .mini-board.won {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .mini-board.won .cell { display: none; }
-  .mini-board.won .winner-mark {
-    font-family: 'Bungee', sans-serif;
-    font-size: clamp(40px, 12vw, 80px);
-    line-height: 1;
-    animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  .mini-board.won-x .winner-mark { color: var(--x); }
-  .mini-board.won-o .winner-mark { color: var(--o); }
-
-  @keyframes pop {
-    0% { transform: scale(0); }
-    100% { transform: scale(1); }
-  }
-
-  /* ---------- OVERLAY ---------- */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(14, 14, 18, 0.92);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    padding: 20px;
-  }
-  .overlay.active { display: flex; }
-  .overlay-card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 32px 28px;
-    text-align: center;
-    max-width: 380px;
-    width: 100%;
-  }
-  .overlay-card h2 {
-    font-family: 'Bungee', sans-serif;
-    font-size: 32px;
-    letter-spacing: 2px;
-    margin: 0 0 8px;
-  }
-  .overlay-card p { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
-
-  /* ---------- HOW TO PLAY ---------- */
-  .help-btn {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    color: var(--ink);
-    font-family: 'Bungee', sans-serif;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  .modal { display: none; position: fixed; inset: 0; background: rgba(14, 14, 18, 0.92); z-index: 200; padding: 20px; overflow-y: auto; }
-  .modal.active { display: block; }
-  .modal-card {
-    max-width: 520px;
-    margin: 40px auto;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 28px;
-  }
-  .modal-card h2 { font-family: 'Bungee', sans-serif; margin: 0 0 16px; letter-spacing: 1px; }
-  .modal-card ol { padding-left: 18px; line-height: 1.7; font-size: 13px; color: var(--ink); }
-  .modal-card li { margin-bottom: 8px; }
-  .modal-close { float: right; background: transparent; border: none; color: var(--muted); font-size: 28px; cursor: pointer; line-height: 1; }
-
-  .footer { margin-top: 20px; color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
-  .error { color: var(--x); font-size: 12px; margin-top: 8px; min-height: 16px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #message {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            height: 24px;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .big-cell {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            background-color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .small-cell {
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            background-color: #eee;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .small-cell:hover {
+            background-color: #ddd;
+        }
+        .small-cell:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .won-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 100px;
+            font-weight: bold;
+            background-color: #fff;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #play-again {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        #play-again:hover {
+            background-color: #45a049;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* --- minimal additions for the lobby (uses same Arial / same vibe) --- */
+        #lobby {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #lobby h2 {
+            margin-top: 0;
+        }
+        #lobby button, #lobby input {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            padding: 10px 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #lobby button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+        }
+        #lobby button:hover {
+            background-color: #45a049;
+        }
+        #lobby input {
+            width: 100px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+        #lobby .divider {
+            margin: 15px 0;
+            color: #888;
+        }
+        #lobby .error {
+            color: #c0392b;
+            font-size: 14px;
+            min-height: 20px;
+            margin-top: 10px;
+        }
+        #room-code-display {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #4CAF50;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-
-<button class="help-btn" onclick="document.getElementById('helpModal').classList.add('active')">?</button>
-
-<h1><span class="x">SUPER</span> TIC-<span class="o">TAC</span>-TOE</h1>
-<div class="tagline">3×3 boards · winner takes the meta</div>
-
-<!-- LOBBY -->
-<div id="lobby" class="lobby">
-  <h2>JOIN A GAME</h2>
-  <input id="nameInput" class="name-input" placeholder="Your name" maxlength="12" />
-  <button id="createBtn" class="btn accent">Create Room</button>
-  <div class="divider">OR</div>
-  <div class="input-row">
-    <input id="codeInput" class="code-input" placeholder="CODE" maxlength="4" />
-    <button id="joinBtn" class="btn">Join</button>
-  </div>
-  <div id="lobbyError" class="error"></div>
-</div>
-
-<!-- WAITING ROOM -->
-<div id="waiting" class="waiting" style="display:none;">
-  <h2 style="font-family:'Bungee',sans-serif;font-size:16px;letter-spacing:1px;margin:0;">SHARE THIS CODE</h2>
-  <div id="roomCodeDisplay" class="room-code-display" title="Click to copy">----</div>
-  <div class="copy-hint">tap code to copy</div>
-  <div style="color:var(--muted);font-size:13px;">Waiting for opponent<span class="dots"></span></div>
-  <button id="cancelBtn" class="btn ghost" style="margin-top:20px;">Cancel</button>
-</div>
-
-<!-- GAME -->
-<div id="game" class="game">
-  <div class="scoreboard">
-    <div id="playerX" class="player-tag">
-      <span class="mark x">X</span>
-      <span class="name">—</span>
+    <!-- LOBBY -->
+    <div id="lobby">
+        <h2>Super Tic-Tac-Toe</h2>
+        <button id="create-btn">Create Room</button>
+        <div class="divider">— or —</div>
+        <input id="code-input" placeholder="CODE" maxlength="4" />
+        <button id="join-btn">Join Room</button>
+        <div id="lobby-error" class="error"></div>
     </div>
-    <div class="vs">VS</div>
-    <div id="playerO" class="player-tag right">
-      <span class="mark o">O</span>
-      <span class="name">—</span>
+
+    <!-- WAITING -->
+    <div id="waiting" style="display:none; text-align:center; background:#fff; padding:30px 40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <h2>Share this code</h2>
+        <div id="room-code-display" title="Click to copy">----</div>
+        <div style="color:#888; font-size:14px;">Waiting for opponent...</div>
+        <button id="cancel-btn" style="margin-top:20px; font-size:16px; padding:10px 14px; background:#aaa; color:#fff; border:none; border-radius:5px; cursor:pointer;">Cancel</button>
     </div>
-  </div>
-  <div id="statusBar" class="status-bar">Loading…</div>
-  <div id="board" class="board"></div>
-</div>
 
-<!-- WIN OVERLAY -->
-<div id="overlay" class="overlay">
-  <div class="overlay-card">
-    <h2 id="overlayTitle">YOU WIN</h2>
-    <p id="overlaySub">Nice work.</p>
-    <button id="playAgainBtn" class="btn accent" style="width:100%;margin-bottom:8px;">Play Again</button>
-    <button id="leaveBtn" class="btn ghost" style="width:100%;">Leave Room</button>
-  </div>
-</div>
+    <!-- GAME (your original markup, untouched) -->
+    <div id="game-container" style="display:none;">
+        <div id="message"></div>
+        <div id="game-board"></div>
+        <div id="status"></div>
+        <button id="play-again">Play Again</button>
+    </div>
 
-<!-- HELP MODAL -->
-<div id="helpModal" class="modal">
-  <div class="modal-card">
-    <button class="modal-close" onclick="document.getElementById('helpModal').classList.remove('active')">×</button>
-    <h2>HOW TO PLAY</h2>
-    <ol>
-      <li>The game is a 3×3 grid of small tic-tac-toe boards.</li>
-      <li>X starts by playing anywhere on the center board.</li>
-      <li>The cell you pick decides which small board your <em>opponent</em> plays on next. If you play the top-left cell, they must play on the top-left board.</li>
-      <li>If the target board is already won or full, the next player can pick <em>any</em> board.</li>
-      <li>Win a small board by getting three in a row.</li>
-      <li>Win the game by winning three small boards in a row.</li>
-    </ol>
-  </div>
-</div>
+    <!-- Your original How To Play modal, untouched -->
+    <div id="howToPlayModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>How to Play Super Tic-Tac-Toe</h2>
+            <ol>
+                <li>The game is played on a 3x3 grid of 3x3 Tic-Tac-Toe boards.</li>
+                <li>To start, Player 1 can place their X mark in the center tile on any cell.</li>
+                <li>The board where the next player must play is determined by the cell chosen by the previous player. For example, if a player places their mark in the top-left cell of any board, the next player must play in the top-left tile of the board.</li>
+                <li>If a player is sent to a tile that is already won or full, they can choose any available cell on any board.</li>
+                <li>To win a tile, get three of your marks in a row (horizontally, vertically, or diagonally).</li>
+                <li>To win the game, win three tile boards in a row (horizontally, vertically, or diagonally).</li>
+            </ol>
+            <p>Have fun!</p>
+        </div>
+    </div>
 
-<div class="footer">Built with ♥ · Firebase Realtime</div>
+    <script type="module">
+        // ----- Firebase -----
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getDatabase, ref, set, onValue, update, get, onDisconnect, remove
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-<!-- Firebase + Game Logic -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getDatabase, ref, set, onValue, update, get, onDisconnect, remove, child
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHlelgAZfwFhUpCRSLV5HjOooGF8YcOGM",
+            authDomain: "tictac-1205b.firebaseapp.com",
+            databaseURL: "https://tictac-1205b-default-rtdb.firebaseio.com",
+            projectId: "tictac-1205b",
+            storageBucket: "tictac-1205b.firebasestorage.app",
+            messagingSenderId: "256644527146",
+            appId: "1:256644527146:web:06d5a2cd7cdda899d1bf53",
+            measurementId: "G-NSLC9LEJZY"
+        };
 
-// ============================================================
-// FIREBASE CONFIG — PASTE YOURS HERE (see README.md)
-// ============================================================
-const firebaseConfig = {
-  apiKey: "AIzaSyAHlelgAZfwFhUpCRSLV5HjOooGF8YcOGM",
-  authDomain: "tictac-1205b.firebaseapp.com",
-  databaseURL: "https://tictac-1205b-default-rtdb.firebaseio.com",
-  projectId: "tictac-1205b",
-  storageBucket: "tictac-1205b.firebasestorage.app",
-  messagingSenderId: "256644527146",
-  appId: "1:256644527146:web:06d5a2cd7cdda899d1bf53",
-  measurementId: "G-NSLC9LEJZY"
-};
-// ============================================================
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+        // ----- DOM refs from your original code -----
+        const gameBoard = document.getElementById('game-board');
+        const statusDisplay = document.getElementById('status');
+        const messageDisplay = document.getElementById('message');
+        const playAgainButton = document.getElementById('play-again');
+        const modal = document.getElementById('howToPlayModal');
+        const closeButton = document.getElementsByClassName('close')[0];
+        const lobby = document.getElementById('lobby');
+        const waiting = document.getElementById('waiting');
+        const gameContainer = document.getElementById('game-container');
+        const lobbyError = document.getElementById('lobby-error');
+        const roomCodeDisplay = document.getElementById('room-code-display');
 
-// ---------- DOM ----------
-const $ = (id) => document.getElementById(id);
-const lobby = $('lobby');
-const waiting = $('waiting');
-const game = $('game');
-const overlay = $('overlay');
-const boardEl = $('board');
-const statusBar = $('statusBar');
-const playerXEl = $('playerX');
-const playerOEl = $('playerO');
-const roomCodeDisplay = $('roomCodeDisplay');
-const lobbyError = $('lobbyError');
+        // ----- Game state (now driven by Firebase) -----
+        let currentPlayer = 'X';
+        let boardTracker = 4;
+        let gameActive = true;
+        let theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
 
-// ---------- State ----------
-let roomCode = null;
-let mySymbol = null;       // 'X' or 'O'
-let myName = 'Anonymous';
-let unsubscribe = null;
-let lastSnap = null;
+        // ----- Multiplayer state -----
+        let roomCode = null;
+        let mySymbol = null;  // 'X' or 'O'
+        let unsubscribe = null;
+        let applyingRemote = false; // prevents echoing local updates
 
-// ---------- Helpers ----------
-function randomCode() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no confusable chars
-  return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
+        // ----- Helpers -----
+        function randomCode() {
+            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+            return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }
 
-function blankGame() {
-  return {
-    cells: Array(81).fill(null),          // 9 mini-boards × 9 cells
-    miniWinners: Array(9).fill(null),     // null | 'X' | 'O' | 'T' (tie)
-    nextBoard: 4,                          // -1 = any; X starts on center per your rules
-    currentPlayer: 'X',
-    winner: null,                          // null | 'X' | 'O' | 'T'
-    lastMoveAt: Date.now()
-  };
-}
+        function gameSnapshot() {
+            // theGame contains numbers (1-9) for empty cells and 'X'/'O' for played.
+            // We serialize numbers as null so Firebase doesn't drop them.
+            return {
+                cells: theGame.map(board => board.map(v => (typeof v === 'string') ? v : null)),
+                boardTracker,
+                currentPlayer,
+                gameActive
+            };
+        }
 
-const WIN_LINES = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
-];
+        function applySnapshot(snap) {
+            applyingRemote = true;
+            // Restore theGame: nulls become their original number (i+1)
+            theGame = snap.cells.map((board, bi) => board.map((v, i) => v === null ? (i + 1) : v));
+            boardTracker = snap.boardTracker;
+            currentPlayer = snap.currentPlayer;
+            gameActive = snap.gameActive;
 
-function checkLine(arr, target) {
-  return WIN_LINES.some(line => line.every(i => arr[i] === target));
-}
+            // Re-render the board fresh, then re-apply won-tiles
+            createBoard();
+            for (let b = 0; b < 9; b++) {
+                // A board is "won" if every cell is the same string
+                const first = theGame[b][0];
+                if (typeof first === 'string' && theGame[b].every(c => c === first)) {
+                    replaceWithLargeLetter(b, first);
+                }
+            }
+            updateBoardStates();
+            updateStatusUI();
+            applyingRemote = false;
+        }
 
-function isFull(arr) { return arr.every(v => v !== null); }
+        function updateStatusUI() {
+            if (!gameActive) {
+                // Determine winner from theGame, or could be a draw
+                const winner = detectWinner();
+                if (winner) {
+                    statusDisplay.textContent = `Player ${winner} wins!`;
+                } else {
+                    statusDisplay.textContent = `Game over`;
+                }
+                playAgainButton.style.display = 'inline-block';
+                messageDisplay.textContent = '';
+                return;
+            }
+            playAgainButton.style.display = 'none';
+            if (currentPlayer === mySymbol) {
+                statusDisplay.textContent = `Your turn (${mySymbol})`;
+            } else {
+                statusDisplay.textContent = `Opponent's turn (${currentPlayer})`;
+            }
+            if (boardTracker === -1) {
+                messageDisplay.textContent = currentPlayer === mySymbol
+                    ? "You can play in any available board"
+                    : "";
+            } else {
+                messageDisplay.textContent = '';
+            }
+        }
 
-// ---------- Lobby actions ----------
-$('createBtn').addEventListener('click', async () => {
-  myName = $('nameInput').value.trim().slice(0, 12) || 'Player 1';
-  lobbyError.textContent = '';
+        function detectWinner() {
+            const winConditions = [
+                [0,1,2],[3,4,5],[6,7,8],
+                [0,3,6],[1,4,7],[2,5,8],
+                [0,4,8],[2,4,6]
+            ];
+            for (const sym of ['X','O']) {
+                for (const condition of winConditions) {
+                    if (condition.every(index => theGame[index].every(cell => cell === sym))) {
+                        return sym;
+                    }
+                }
+            }
+            return null;
+        }
 
-  // Generate a unique code
-  let code, snap;
-  for (let i = 0; i < 10; i++) {
-    code = randomCode();
-    snap = await get(ref(db, `rooms/${code}`));
-    if (!snap.exists()) break;
-  }
-  if (snap && snap.exists()) {
-    lobbyError.textContent = "Couldn't generate a room. Try again.";
-    return;
-  }
+        // ----- Your original game functions (lightly adapted) -----
+        function createBoard() {
+            gameBoard.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const bigCell = document.createElement('div');
+                bigCell.classList.add('big-cell');
+                bigCell.dataset.bigCell = i;
+                for (let j = 0; j < 9; j++) {
+                    const smallCell = document.createElement('button');
+                    smallCell.classList.add('small-cell');
+                    smallCell.dataset.bigCell = i;
+                    smallCell.dataset.smallCell = j;
+                    smallCell.textContent = theGame[i][j];
+                    smallCell.addEventListener('click', handleCellClick);
+                    bigCell.appendChild(smallCell);
+                }
+                gameBoard.appendChild(bigCell);
+            }
+        }
 
-  roomCode = code;
-  mySymbol = 'X';
-  const initial = {
-    players: { X: myName, O: null },
-    state: blankGame(),
-    createdAt: Date.now()
-  };
-  await set(ref(db, `rooms/${roomCode}`), initial);
-  // Clean up if creator disconnects before opponent joins
-  onDisconnect(ref(db, `rooms/${roomCode}`)).remove();
+        function handleCellClick(event) {
+            const bigCell = parseInt(event.target.dataset.bigCell);
+            const smallCell = parseInt(event.target.dataset.smallCell);
+            if (!gameActive || typeof theGame[bigCell][smallCell] === 'string') return;
 
-  enterWaiting();
-});
+            // Multiplayer: only let the player whose turn it is move
+            if (currentPlayer !== mySymbol) {
+                messageDisplay.textContent = "Not your turn";
+                return;
+            }
 
-$('joinBtn').addEventListener('click', async () => {
-  myName = $('nameInput').value.trim().slice(0, 12) || 'Player 2';
-  const code = $('codeInput').value.trim().toUpperCase();
-  lobbyError.textContent = '';
-  if (code.length !== 4) {
-    lobbyError.textContent = "Code must be 4 characters.";
-    return;
-  }
+            if (boardTracker !== -1 && bigCell !== boardTracker && !theGame[boardTracker].every(cell => typeof cell === 'string')) {
+                messageDisplay.textContent = `You must play in board ${boardTracker + 1}`;
+                return;
+            }
+            theGame[bigCell][smallCell] = currentPlayer;
+            event.target.textContent = currentPlayer;
+            event.target.disabled = true;
+            checkEntireTile(bigCell);
+            if (checkWin()) {
+                gameActive = false;
+                statusDisplay.textContent = `Player ${currentPlayer} wins!`;
+                playAgainButton.style.display = 'inline-block';
+                messageDisplay.textContent = '';
+                pushState();
+                return;
+            }
+            boardTracker = smallCell;
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            if (theGame[boardTracker].every(cell => typeof cell === 'string')) {
+                messageDisplay.textContent = "You can play in any available board for this turn";
+                boardTracker = -1;
+            } else {
+                messageDisplay.textContent = '';
+            }
+            updateBoardStates();
+            updateStatusUI();
+            pushState();
+        }
 
-  const snap = await get(ref(db, `rooms/${code}`));
-  if (!snap.exists()) {
-    lobbyError.textContent = "Room not found.";
-    return;
-  }
-  const data = snap.val();
-  if (data.players.O) {
-    lobbyError.textContent = "Room is full.";
-    return;
-  }
+        function checkEntireTile(boardTracker) {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (let condition of winConditions) {
+                if (condition.every(index => theGame[boardTracker][index] === currentPlayer)) {
+                    theGame[boardTracker].fill(currentPlayer);
+                    replaceWithLargeLetter(boardTracker, currentPlayer);
+                    break;
+                }
+            }
+        }
+        function replaceWithLargeLetter(boardTracker, player) {
+            const bigCell = document.querySelector(`.big-cell[data-big-cell="${boardTracker}"]`);
+            bigCell.innerHTML = '';
+            bigCell.classList.add('won-cell');
+            bigCell.textContent = player;
+        }
+        function checkWin() {
+            const winConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (let condition of winConditions) {
+                if (condition.every(index =>
+                    theGame[index].every(cell => cell === currentPlayer)
+                )) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        function updateBoardStates() {
+            document.querySelectorAll('.small-cell').forEach(cell => {
+                const bigCell = parseInt(cell.dataset.bigCell);
+                const smallCell = parseInt(cell.dataset.smallCell);
+                const cellIsTaken = typeof theGame[bigCell][smallCell] === 'string';
+                const myTurn = currentPlayer === mySymbol;
+                const boardAllowed = (boardTracker === -1 || bigCell === boardTracker);
+                cell.disabled = !gameActive || cellIsTaken || !myTurn || !boardAllowed;
+            });
+        }
+        function resetGame() {
+            currentPlayer = 'X';
+            boardTracker = 4;
+            gameActive = true;
+            theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
+            createBoard();
+            updateBoardStates();
+            updateStatusUI();
+            playAgainButton.style.display = 'none';
+            pushState();
+        }
 
-  roomCode = code;
-  mySymbol = 'O';
-  await update(ref(db, `rooms/${roomCode}/players`), { O: myName });
-  // When O disconnects, just clear their slot (X is still the host)
-  onDisconnect(ref(db, `rooms/${roomCode}/players/O`)).set(null);
+        // ----- Push state to Firebase -----
+        function pushState() {
+            if (applyingRemote || !roomCode) return;
+            update(ref(db, `rooms/${roomCode}/state`), gameSnapshot());
+        }
 
-  enterGame();
-});
+        // ----- Lobby logic -----
+        document.getElementById('create-btn').addEventListener('click', async () => {
+            lobbyError.textContent = '';
+            let code, snap;
+            for (let i = 0; i < 10; i++) {
+                code = randomCode();
+                snap = await get(ref(db, `rooms/${code}`));
+                if (!snap.exists()) break;
+            }
+            if (snap && snap.exists()) {
+                lobbyError.textContent = "Couldn't create a room, try again.";
+                return;
+            }
+            roomCode = code;
+            mySymbol = 'X';
+            await set(ref(db, `rooms/${roomCode}`), {
+                players: { X: true, O: false },
+                state: gameSnapshot()
+            });
+            onDisconnect(ref(db, `rooms/${roomCode}`)).remove();
+            showWaiting();
+        });
 
-$('cancelBtn').addEventListener('click', async () => {
-  if (roomCode) await remove(ref(db, `rooms/${roomCode}`));
-  resetToLobby();
-});
+        document.getElementById('join-btn').addEventListener('click', async () => {
+            lobbyError.textContent = '';
+            const code = document.getElementById('code-input').value.trim().toUpperCase();
+            if (code.length !== 4) {
+                lobbyError.textContent = "Code must be 4 characters.";
+                return;
+            }
+            const snap = await get(ref(db, `rooms/${code}`));
+            if (!snap.exists()) {
+                lobbyError.textContent = "Room not found.";
+                return;
+            }
+            const data = snap.val();
+            if (data.players.O) {
+                lobbyError.textContent = "Room is full.";
+                return;
+            }
+            roomCode = code;
+            mySymbol = 'O';
+            await update(ref(db, `rooms/${roomCode}/players`), { O: true });
+            onDisconnect(ref(db, `rooms/${roomCode}/players/O`)).set(false);
+            showGame();
+        });
 
-$('leaveBtn').addEventListener('click', async () => {
-  if (roomCode) await remove(ref(db, `rooms/${roomCode}`));
-  overlay.classList.remove('active');
-  resetToLobby();
-});
+        document.getElementById('cancel-btn').addEventListener('click', async () => {
+            if (roomCode) await remove(ref(db, `rooms/${roomCode}`));
+            roomCode = null;
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            waiting.style.display = 'none';
+            lobby.style.display = 'block';
+        });
 
-$('playAgainBtn').addEventListener('click', async () => {
-  if (!roomCode) return;
-  await update(ref(db, `rooms/${roomCode}/state`), blankGame());
-  overlay.classList.remove('active');
-});
+        roomCodeDisplay.addEventListener('click', () => {
+            if (!roomCode) return;
+            navigator.clipboard?.writeText(roomCode);
+            const orig = roomCodeDisplay.textContent;
+            roomCodeDisplay.textContent = 'COPIED';
+            setTimeout(() => roomCodeDisplay.textContent = orig, 900);
+        });
 
-roomCodeDisplay.addEventListener('click', () => {
-  if (roomCode) {
-    navigator.clipboard?.writeText(roomCode);
-    const orig = roomCodeDisplay.textContent;
-    roomCodeDisplay.textContent = 'COPIED';
-    setTimeout(() => { roomCodeDisplay.textContent = orig; }, 900);
-  }
-});
+        // ----- View switching -----
+        function showWaiting() {
+            lobby.style.display = 'none';
+            waiting.style.display = 'block';
+            gameContainer.style.display = 'none';
+            roomCodeDisplay.textContent = roomCode;
+            subscribe();
+        }
+        function showGame() {
+            lobby.style.display = 'none';
+            waiting.style.display = 'none';
+            gameContainer.style.display = 'block';
+            // Show the modal only on first entry, like your original code
+            modal.style.display = "block";
+            subscribe();
+        }
 
-// ---------- View transitions ----------
-function enterWaiting() {
-  lobby.style.display = 'none';
-  waiting.style.display = 'block';
-  game.classList.remove('active');
-  roomCodeDisplay.textContent = roomCode;
-  subscribeRoom();
-}
-function enterGame() {
-  lobby.style.display = 'none';
-  waiting.style.display = 'none';
-  game.classList.add('active');
-  buildBoard();
-  subscribeRoom();
-}
-function resetToLobby() {
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  roomCode = null;
-  mySymbol = null;
-  lastSnap = null;
-  lobby.style.display = 'block';
-  waiting.style.display = 'none';
-  game.classList.remove('active');
-  $('codeInput').value = '';
-  lobbyError.textContent = '';
-}
+        // ----- Realtime subscribe -----
+        function subscribe() {
+            if (unsubscribe) unsubscribe();
+            unsubscribe = onValue(ref(db, `rooms/${roomCode}`), (snap) => {
+                if (!snap.exists()) {
+                    alert('The other player left the room.');
+                    location.reload();
+                    return;
+                }
+                const data = snap.val();
+                // Move from waiting to game once both players are present
+                if (data.players.X && data.players.O && gameContainer.style.display === 'none') {
+                    showGame();
+                }
+                if (data.players.X && data.players.O) {
+                    applySnapshot(data.state);
+                }
+            });
+        }
 
-// ---------- Board rendering ----------
-function buildBoard() {
-  boardEl.innerHTML = '';
-  for (let b = 0; b < 9; b++) {
-    const mini = document.createElement('div');
-    mini.className = 'mini-board';
-    mini.dataset.board = b;
-    for (let c = 0; c < 9; c++) {
-      const cell = document.createElement('button');
-      cell.className = 'cell';
-      cell.dataset.board = b;
-      cell.dataset.cell = c;
-      cell.addEventListener('click', onCellClick);
-      mini.appendChild(cell);
-    }
-    boardEl.appendChild(mini);
-  }
-}
+        // ----- Your original modal handlers -----
+        closeButton.onclick = function() {
+            modal.style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
 
-function renderState(state, players) {
-  // Player tags
-  playerXEl.querySelector('.name').textContent = players.X || '—';
-  playerOEl.querySelector('.name').textContent = players.O || 'waiting…';
-  playerXEl.classList.toggle('active', state.currentPlayer === 'X' && !state.winner);
-  playerOEl.classList.toggle('active', state.currentPlayer === 'O' && !state.winner);
-
-  // Status
-  if (state.winner) {
-    statusBar.textContent = state.winner === 'T' ? 'DRAW' : `${state.winner} WINS THE GAME`;
-    statusBar.classList.add('urgent');
-  } else if (!players.O) {
-    statusBar.textContent = 'WAITING FOR PLAYER O…';
-    statusBar.classList.remove('urgent');
-  } else if (state.currentPlayer === mySymbol) {
-    statusBar.textContent = state.nextBoard === -1 ? 'YOUR TURN — PICK ANY BOARD' : `YOUR TURN — BOARD ${state.nextBoard + 1}`;
-    statusBar.classList.add('urgent');
-  } else {
-    statusBar.textContent = `${state.currentPlayer === 'X' ? players.X : players.O || 'opponent'} is thinking…`;
-    statusBar.classList.remove('urgent');
-  }
-
-  // Mini-boards & cells
-  for (let b = 0; b < 9; b++) {
-    const miniEl = boardEl.children[b];
-    const winner = state.miniWinners[b];
-    miniEl.classList.toggle('active', !state.winner && (state.nextBoard === -1 || state.nextBoard === b) && !winner);
-    miniEl.classList.remove('won', 'won-x', 'won-o');
-
-    if (winner && winner !== 'T') {
-      miniEl.classList.add('won', winner === 'X' ? 'won-x' : 'won-o');
-      // Insert big winner mark if not already there
-      let mark = miniEl.querySelector('.winner-mark');
-      if (!mark) {
-        mark = document.createElement('div');
-        mark.className = 'winner-mark';
-        miniEl.appendChild(mark);
-      }
-      mark.textContent = winner;
-    } else {
-      const existingMark = miniEl.querySelector('.winner-mark');
-      if (existingMark) existingMark.remove();
-      // Update cells
-      for (let c = 0; c < 9; c++) {
-        const cellEl = miniEl.children[c];
-        const v = state.cells[b * 9 + c];
-        cellEl.textContent = v || '';
-        cellEl.classList.remove('x', 'o');
-        if (v === 'X') cellEl.classList.add('x');
-        if (v === 'O') cellEl.classList.add('o');
-
-        const myTurn = state.currentPlayer === mySymbol && !state.winner && players.O;
-        const boardOpen = state.nextBoard === -1 || state.nextBoard === b;
-        cellEl.disabled = !!v || !myTurn || !boardOpen || !!winner;
-      }
-    }
-  }
-
-  // Win overlay
-  if (state.winner) {
-    const title = state.winner === 'T'
-      ? "IT'S A DRAW"
-      : (state.winner === mySymbol ? 'YOU WIN' : 'YOU LOSE');
-    const sub = state.winner === 'T'
-      ? 'Cat got the game.'
-      : (state.winner === mySymbol ? 'Beautifully played.' : 'GG. Get them next time.');
-    $('overlayTitle').textContent = title;
-    $('overlaySub').textContent = sub;
-    overlay.classList.add('active');
-  } else {
-    overlay.classList.remove('active');
-  }
-}
-
-// ---------- Move handler ----------
-async function onCellClick(e) {
-  if (!lastSnap) return;
-  const { state, players } = lastSnap;
-  if (state.winner) return;
-  if (!players.O) return;
-  if (state.currentPlayer !== mySymbol) return;
-
-  const b = parseInt(e.currentTarget.dataset.board);
-  const c = parseInt(e.currentTarget.dataset.cell);
-
-  if (state.miniWinners[b]) return;
-  if (state.cells[b * 9 + c]) return;
-  if (state.nextBoard !== -1 && state.nextBoard !== b) return;
-
-  // Compute new state locally — server doesn't validate, but Firebase rules can.
-  const newCells = state.cells.slice();
-  newCells[b * 9 + c] = mySymbol;
-
-  const newMiniWinners = state.miniWinners.slice();
-  // Check mini board win
-  const slice = newCells.slice(b * 9, b * 9 + 9);
-  if (checkLine(slice, mySymbol)) {
-    newMiniWinners[b] = mySymbol;
-  } else if (isFull(slice)) {
-    newMiniWinners[b] = 'T';
-  }
-
-  // Check overall winner
-  let winner = null;
-  // Treat ties on mini boards as not contributing to a line
-  const linePiece = (idx) => newMiniWinners[idx] === 'T' ? null : newMiniWinners[idx];
-  if (WIN_LINES.some(line => line.every(i => linePiece(i) === mySymbol))) {
-    winner = mySymbol;
-  } else if (newMiniWinners.every(w => w !== null)) {
-    winner = 'T';
-  }
-
-  // Determine next board: it's the small-cell index of the move.
-  // If that board is already won/tied, allow any.
-  let nextBoard = c;
-  if (newMiniWinners[nextBoard]) nextBoard = -1;
-
-  const next = {
-    cells: newCells,
-    miniWinners: newMiniWinners,
-    nextBoard,
-    currentPlayer: mySymbol === 'X' ? 'O' : 'X',
-    winner,
-    lastMoveAt: Date.now()
-  };
-
-  await update(ref(db, `rooms/${roomCode}/state`), next);
-}
-
-// ---------- Subscribe ----------
-function subscribeRoom() {
-  if (unsubscribe) unsubscribe();
-  const roomRef = ref(db, `rooms/${roomCode}`);
-  unsubscribe = onValue(roomRef, (snap) => {
-    if (!snap.exists()) {
-      // Room was deleted (other player left)
-      alert('The other player left the room.');
-      resetToLobby();
-      return;
-    }
-    const data = snap.val();
-    lastSnap = data;
-
-    // Move from waiting -> game once both players are present
-    if (data.players.X && data.players.O) {
-      if (game.classList.contains('active') === false) {
-        enterGame();
-      }
-      renderState(data.state, data.players);
-    } else {
-      // Still waiting
-      if (mySymbol === 'X') {
-        waiting.style.display = 'block';
-        lobby.style.display = 'none';
-        game.classList.remove('active');
-      }
-    }
-  });
-}
-</script>
+        playAgainButton.addEventListener('click', resetGame);
+    </script>
 </body>
 </html>
