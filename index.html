@@ -36,9 +36,9 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    padding: 24px 16px;
+    padding: 24px 16px 40px;
     /* Risograph paper texture via SVG noise */
     background-image:
       radial-gradient(circle at 15% 20%, rgba(230, 57, 70, 0.08) 0, transparent 25%),
@@ -290,8 +290,7 @@
     transform-style: preserve-3d;
     transition: transform 2.4s cubic-bezier(0.25, 1, 0.5, 1);
   }
-  .coin.flipping.heads { transform: rotateY(2160deg); }
-  .coin.flipping.tails { transform: rotateY(2340deg); }
+  .coin.flipping { transform: rotateY(2160deg); }
   .coin-face {
     position: absolute;
     inset: 0;
@@ -304,16 +303,12 @@
     font-family: 'Archivo Black', sans-serif;
     font-size: 72px;
     backface-visibility: hidden;
+    background: var(--paper);
+    color: var(--ink);
   }
-  .coin-face.heads {
-    background: var(--red);
-    color: var(--paper);
-  }
-  .coin-face.tails {
-    background: var(--blue);
-    color: var(--paper);
-    transform: rotateY(180deg);
-  }
+  .coin-face.is-x { background: var(--red); color: var(--paper); }
+  .coin-face.is-o { background: var(--blue); color: var(--paper); }
+  .coin-face.tails { transform: rotateY(180deg); }
   .coin-result {
     margin-top: 24px;
     min-height: 60px;
@@ -459,8 +454,12 @@
     font-family: 'Archivo Black', sans-serif;
     font-size: clamp(70px, 18vw, 120px);
     line-height: 1;
-    border: 3px solid var(--ink);
+    /* IMPORTANT: no border — the parent grid sets the cell size and an
+       added border throws everything off. Use inset box-shadow instead. */
+    box-shadow: inset 0 0 0 3px var(--ink);
+    box-sizing: border-box;
     animation: stamp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
   }
   .big-cell.won .small-cell { display: none; }
   .big-cell.won.won-x { background: var(--red); color: var(--paper); }
@@ -564,7 +563,7 @@
     <span class="line1">SUPER</span>
     <span class="line2">TIC&middot;TAC&middot;TOE</span>
   </h1>
-  <div><span class="version-badge">v2.1</span></div>
+  <div><span class="version-badge">v2.2</span></div>
 </div>
 
 <!-- LOBBY -->
@@ -594,8 +593,8 @@
   <h2>Coin Flip</h2>
   <div class="coin-stage">
     <div id="coin" class="coin">
-      <div class="coin-face heads">X</div>
-      <div class="coin-face tails">O</div>
+      <div class="coin-face heads" id="coin-heads">?</div>
+      <div class="coin-face tails" id="coin-tails">?</div>
     </div>
   </div>
   <div class="coin-result">
@@ -655,7 +654,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-console.log("%cSuper Tic-Tac-Toe v2.1 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
+console.log("%cSuper Tic-Tac-Toe v2.2 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
 
 // ============================================================
 // DOM
@@ -948,34 +947,52 @@ function resetToLobby() {
 }
 
 // ============================================================
-// Coin flip animation
+// Coin flip animation - personalized per player
 // ============================================================
 function playCoinFlip(flipData) {
   if (coinAnimationDone) return;
   coinAnimationDone = true;
 
-  // Determine my symbol
+  // Determine my symbol and opponent's symbol
   mySymbol = (myRole === 'host') ? flipData.hostSymbol : flipData.guestSymbol;
+  const theirSymbol = mySymbol === 'X' ? 'O' : 'X';
 
-  // Trigger the 3D coin spin
-  // Add 'flipping' + result class after a tiny delay so the transition kicks in
+  // Set up the two coin faces FROM MY perspective.
+  // The "heads" face is what lands face-up at the end — make it MY symbol.
+  // The "tails" face is the back — make it the OPPONENT's symbol.
+  const headsFace = document.getElementById('coin-heads');
+  const tailsFace = document.getElementById('coin-tails');
+
+  headsFace.textContent = mySymbol;
+  headsFace.className = 'coin-face heads ' + (mySymbol === 'X' ? 'is-x' : 'is-o');
+
+  tailsFace.textContent = theirSymbol;
+  tailsFace.className = 'coin-face tails ' + (theirSymbol === 'X' ? 'is-x' : 'is-o');
+
+  // Reset any prior state and trigger the spin.
+  // We always land on "heads" since that's our personalized symbol.
+  coinEl.className = 'coin';
   requestAnimationFrame(() => {
-    coinEl.classList.add('flipping', flipData.result);
+    // Tiny double-rAF to let the browser pick up the reset before transitioning
+    requestAnimationFrame(() => {
+      coinEl.classList.add('flipping', 'heads');
+    });
   });
 
-  // After the spin animation, reveal the result text
+  // After the spin, show the result text
   setTimeout(() => {
-    const iWonFlip = mySymbol === flipData.firstPlayer; // X goes first
-    coinResultText.textContent = iWonFlip
-      ? `YOU GOT ${mySymbol} · YOU GO FIRST`
-      : `YOU GOT ${mySymbol} · OPPONENT GOES FIRST`;
-    coinResultText.classList.add('show', iWonFlip ? 'winner-me' : 'winner-other');
+    const iGoFirst = mySymbol === flipData.firstPlayer; // X always first
+    coinResultText.textContent = iGoFirst
+      ? `YOU'RE ${mySymbol} · YOU GO FIRST`
+      : `YOU'RE ${mySymbol} · OPPONENT GOES FIRST`;
+    coinResultText.classList.remove('show', 'winner-me', 'winner-other');
+    void coinResultText.offsetWidth; // restart any transitions
+    coinResultText.classList.add('show', iGoFirst ? 'winner-me' : 'winner-other');
   }, 2500);
 
   // Move to game after a beat
   setTimeout(() => {
     enterGame();
-    // Re-subscribe gets the latest game state; the existing one is fine
   }, 4500);
 }
 
