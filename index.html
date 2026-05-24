@@ -1,593 +1,1169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Tic-Tac-Toe</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        #game-container {
-            text-align: center;
-        }
-        #message {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            height: 24px;
-        }
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            background-color: #333;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .big-cell {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            background-color: #fff;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .small-cell {
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            font-weight: bold;
-            border: none;
-            background-color: #eee;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .small-cell:hover {
-            background-color: #ddd;
-        }
-        .small-cell:disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        .won-cell {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 100px;
-            font-weight: bold;
-            background-color: #fff;
-        }
-        #status {
-            margin-top: 20px;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        #play-again {
-            font-size: 18px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: none;
-        }
-        #play-again:hover {
-            background-color: #45a049;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 600px;
-            border-radius: 10px;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        /* --- minimal additions for the lobby (uses same Arial / same vibe) --- */
-        #lobby {
-            background-color: #fff;
-            padding: 30px 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        #lobby h2 {
-            margin-top: 0;
-        }
-        #lobby button, #lobby input {
-            font-family: Arial, sans-serif;
-            font-size: 16px;
-            padding: 10px 14px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        #lobby button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin: 5px;
-        }
-        #lobby button:hover {
-            background-color: #45a049;
-        }
-        #lobby input {
-            width: 100px;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-        }
-        #lobby .divider {
-            margin: 15px 0;
-            color: #888;
-        }
-        #lobby .error {
-            color: #c0392b;
-            font-size: 14px;
-            min-height: 20px;
-            margin-top: 10px;
-        }
-        #room-code-display {
-            font-size: 36px;
-            font-weight: bold;
-            letter-spacing: 8px;
-            color: #4CAF50;
-            margin: 10px 0;
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Super Tic-Tac-Toe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3ebd9;
+    --paper-dark: #e8dec6;
+    --ink: #1a1a1a;
+    --red: #e63946;
+    --blue: #1d4ed8;
+    --yellow: #fbbf24;
+    --shadow: 4px 4px 0 var(--ink);
+    --shadow-sm: 2px 2px 0 var(--ink);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 16px;
+    /* Risograph paper texture via SVG noise */
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(230, 57, 70, 0.08) 0, transparent 25%),
+      radial-gradient(circle at 85% 80%, rgba(29, 78, 216, 0.08) 0, transparent 25%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ============ TITLE ============ */
+  .title-block {
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(36px, 8vw, 64px);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+    transform: rotate(-1.5deg);
+  }
+  .title .line1 {
+    display: block;
+    color: var(--red);
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .title .line2 {
+    display: block;
+    color: var(--blue);
+    text-shadow: 3px 3px 0 var(--ink);
+    transform: translateX(28px) rotate(2deg);
+  }
+  .version-badge {
+    display: inline-block;
+    background: var(--yellow);
+    border: 2px solid var(--ink);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+    transform: rotate(2deg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ============ CARD (shared) ============ */
+  .card {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    box-shadow: var(--shadow);
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 400px;
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border: 1px dashed var(--ink);
+    pointer-events: none;
+    opacity: 0.25;
+  }
+
+  /* ============ LOBBY ============ */
+  .lobby h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    margin: 0 0 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .btn {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 14px 18px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 3px solid var(--ink);
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    box-shadow: var(--shadow);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .btn.red { background: var(--red); }
+  .btn.blue { background: var(--blue); }
+  .btn.yellow { background: var(--yellow); color: var(--ink); }
+  .btn.ghost { background: var(--paper); color: var(--ink); }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 14px 0;
+    opacity: 0.6;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: var(--ink);
+    opacity: 0.4;
+  }
+  .divider::before { margin-right: 10px; }
+  .divider::after { margin-left: 10px; }
+
+  .input-row { display: flex; gap: 8px; }
+  .input-row .btn { width: auto; padding: 14px 18px; }
+
+  .code-input {
+    flex: 1;
+    min-width: 0;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px;
+    letter-spacing: 8px;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 10px;
+    background: var(--paper-dark);
+    border: 3px solid var(--ink);
+    color: var(--ink);
+    outline: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .code-input::placeholder { color: var(--ink); opacity: 0.4; }
+  .code-input:focus { background: var(--yellow); }
+
+  .error {
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 700;
+    min-height: 18px;
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  /* ============ WAITING ============ */
+  .waiting { text-align: center; }
+  .waiting h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 14px;
+    margin: 0 0 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+  }
+  .room-code {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 64px;
+    letter-spacing: 14px;
+    color: var(--red);
+    text-shadow: 4px 4px 0 var(--ink);
+    margin: 14px 0 4px;
+    padding-left: 14px; /* offset letter-spacing */
+    cursor: pointer;
+    user-select: all;
+    line-height: 1;
+  }
+  .copy-hint {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin-bottom: 20px;
+  }
+  .waiting-text {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .dots::after {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    text-align: left;
+    animation: dots 1.4s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+  }
+
+  /* ============ COIN FLIP ============ */
+  .coin-screen {
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+  }
+  .coin-screen h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    margin: 0 0 30px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .coin-stage {
+    width: 160px;
+    height: 160px;
+    margin: 20px auto;
+    perspective: 800px;
+  }
+  .coin {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 2.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .coin.flipping.heads { transform: rotateY(2160deg); }
+  .coin.flipping.tails { transform: rotateY(2340deg); }
+  .coin-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 4px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 72px;
+    backface-visibility: hidden;
+  }
+  .coin-face.heads {
+    background: var(--red);
+    color: var(--paper);
+  }
+  .coin-face.tails {
+    background: var(--blue);
+    color: var(--paper);
+    transform: rotateY(180deg);
+  }
+  .coin-result {
+    margin-top: 24px;
+    min-height: 60px;
+  }
+  .coin-result-text {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    transition: opacity 0.5s ease 0.3s;
+  }
+  .coin-result-text.show { opacity: 1; }
+  .coin-result-text.winner-me { color: var(--blue); }
+  .coin-result-text.winner-other { color: var(--ink); opacity: 0.7; }
+
+  /* ============ GAME ============ */
+  .game {
+    width: 100%;
+    max-width: 520px;
+    display: none;
+  }
+  .game.active { display: block; }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 0 4px;
+  }
+  .room-pill {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: var(--paper-dark);
+    border: 2px solid var(--ink);
+    padding: 4px 10px;
+    box-shadow: var(--shadow-sm);
+  }
+  .you-pill {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: 2px solid var(--ink);
+    box-shadow: var(--shadow-sm);
+    color: var(--paper);
+  }
+  .you-pill.x { background: var(--red); }
+  .you-pill.o { background: var(--blue); }
+
+  .message {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    min-height: 18px;
+    margin-bottom: 10px;
+    color: var(--ink);
+    opacity: 0.7;
+  }
+  .message.alert { color: var(--red); opacity: 1; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: var(--ink);
+    padding: 6px;
+    border: 3px solid var(--ink);
+    box-shadow: var(--shadow);
+    aspect-ratio: 1;
+    width: 100%;
+    margin-bottom: 18px;
+  }
+  .big-cell {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--paper-dark);
+    padding: 4px;
+    position: relative;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .big-cell.active {
+    background: var(--yellow);
+    transform: scale(1.01);
+    z-index: 1;
+  }
+  .small-cell {
+    aspect-ratio: 1;
+    width: 100%;
+    height: auto;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(14px, 3.5vw, 22px);
+    border: none;
+    background: var(--paper);
+    cursor: pointer;
+    color: var(--ink);
+    opacity: 0.25;
+    padding: 0;
+    transition: background 0.1s ease, transform 0.08s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+  }
+  .big-cell.active .small-cell {
+    background: var(--paper);
+    opacity: 0.55;
+  }
+  .big-cell.active .small-cell:not(:disabled) { opacity: 1; }
+  .big-cell.active .small-cell:not(:disabled):hover {
+    background: var(--ink);
+    color: var(--paper);
+    transform: scale(0.94);
+  }
+  .small-cell:disabled { cursor: not-allowed; }
+  .small-cell.played {
+    opacity: 1;
+    font-size: clamp(20px, 5vw, 32px);
+  }
+  .small-cell.played-x {
+    background: var(--red) !important;
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .small-cell.played-o {
+    background: var(--blue) !important;
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .big-cell.won {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(70px, 18vw, 120px);
+    line-height: 1;
+    border: 3px solid var(--ink);
+    animation: stamp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .big-cell.won .small-cell { display: none; }
+  .big-cell.won.won-x { background: var(--red); color: var(--paper); }
+  .big-cell.won.won-o { background: var(--blue); color: var(--paper); }
+  @keyframes stamp {
+    0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  .status {
+    text-align: center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  .play-again {
+    margin-top: 18px;
+    width: 100%;
+    display: none;
+  }
+  .play-again.show { display: flex; }
+
+  /* ============ MODAL ============ */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 26, 0.6);
+    z-index: 100;
+    overflow-y: auto;
+    padding: 20px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .modal.active { display: flex; }
+  .modal-card {
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    box-shadow: var(--shadow);
+    padding: 30px 26px;
+    width: 100%;
+    max-width: 460px;
+    margin-top: 6vh;
+    position: relative;
+  }
+  .modal-card h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 0 0 16px;
+  }
+  .modal-card ol {
+    padding-left: 20px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .modal-card li { margin-bottom: 10px; }
+  .modal-card p { font-size: 14px; margin: 16px 0 0; }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: var(--yellow);
+    border: 2px solid var(--ink);
+    width: 32px;
+    height: 32px;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    line-height: 1;
+  }
+  .modal-close:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 480px) {
+    .board { gap: 4px; padding: 4px; }
+    .big-cell { gap: 2px; padding: 3px; }
+    .room-code { font-size: 48px; letter-spacing: 10px; }
+    .coin-stage { width: 130px; height: 130px; }
+    .coin-face { font-size: 56px; }
+  }
+
+  /* Hide all screens by default; JS shows one */
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .screen.active.flex { display: flex; flex-direction: column; align-items: center; }
+</style>
 </head>
 <body>
-    <!-- LOBBY -->
-    <div id="lobby">
-        <h2>Super Tic-Tac-Toe</h2>
-        <button id="create-btn">Create Room</button>
-        <div class="divider">— or —</div>
-        <input id="code-input" placeholder="CODE" maxlength="4" />
-        <button id="join-btn">Join Room</button>
-        <div id="lobby-error" class="error"></div>
+
+<!-- TITLE -->
+<div class="title-block">
+  <h1 class="title">
+    <span class="line1">SUPER</span>
+    <span class="line2">TIC&middot;TAC&middot;TOE</span>
+  </h1>
+  <div><span class="version-badge">v2.0</span></div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen active card lobby">
+  <h2>Start a game</h2>
+  <button id="create-btn" class="btn red"><span id="create-label">Create Room</span></button>
+  <div class="divider">or</div>
+  <div class="input-row">
+    <input id="code-input" class="code-input" placeholder="CODE" maxlength="4" />
+    <button id="join-btn" class="btn blue"><span id="join-label">Join</span></button>
+  </div>
+  <button id="rules-btn" class="btn ghost" style="margin-top:14px;">How to Play</button>
+  <div id="lobby-error" class="error"></div>
+</div>
+
+<!-- WAITING -->
+<div id="waiting" class="screen card waiting">
+  <h2>Share this code</h2>
+  <div id="room-code-display" class="room-code" title="Click to copy">----</div>
+  <div class="copy-hint">tap code to copy</div>
+  <div class="waiting-text">Waiting for opponent<span class="dots"></span></div>
+  <button id="cancel-btn" class="btn ghost" style="margin-top:18px;">Cancel</button>
+</div>
+
+<!-- COIN FLIP -->
+<div id="coin-screen" class="screen card coin-screen">
+  <h2>Coin Flip</h2>
+  <div class="coin-stage">
+    <div id="coin" class="coin">
+      <div class="coin-face heads">X</div>
+      <div class="coin-face tails">O</div>
     </div>
+  </div>
+  <div class="coin-result">
+    <div id="coin-result-text" class="coin-result-text"></div>
+  </div>
+</div>
 
-    <!-- WAITING -->
-    <div id="waiting" style="display:none; text-align:center; background:#fff; padding:30px 40px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-        <h2>Share this code</h2>
-        <div id="room-code-display" title="Click to copy">----</div>
-        <div style="color:#888; font-size:14px;">Waiting for opponent...</div>
-        <button id="cancel-btn" style="margin-top:20px; font-size:16px; padding:10px 14px; background:#aaa; color:#fff; border:none; border-radius:5px; cursor:pointer;">Cancel</button>
-    </div>
+<!-- GAME -->
+<div id="game" class="screen game">
+  <div class="game-header">
+    <span class="room-pill" id="room-pill">Room ····</span>
+    <span class="you-pill" id="you-pill">You · X</span>
+  </div>
+  <div id="message" class="message"></div>
+  <div id="board" class="board"></div>
+  <div id="status" class="status">—</div>
+  <button id="play-again" class="btn yellow play-again">Play Again</button>
+</div>
 
-    <!-- GAME (your original markup, untouched) -->
-    <div id="game-container" style="display:none;">
-        <div id="message"></div>
-        <div id="game-board"></div>
-        <div id="status"></div>
-        <button id="play-again">Play Again</button>
-    </div>
+<!-- HOW TO PLAY MODAL -->
+<div id="rulesModal" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" id="rules-close">×</button>
+    <h2>How to Play Super Tic-Tac-Toe</h2>
+    <ol>
+      <li>The game is played on a 3x3 grid of 3x3 Tic-Tac-Toe boards.</li>
+      <li>To start, Player 1 can place their X mark in the center tile on any cell.</li>
+      <li>The board where the next player must play is determined by the cell chosen by the previous player. For example, if a player places their mark in the top-left cell of any board, the next player must play in the top-left tile of the board.</li>
+      <li>If a player is sent to a tile that is already won or full, they can choose any available cell on any board.</li>
+      <li>To win a tile, get three of your marks in a row (horizontally, vertically, or diagonally).</li>
+      <li>To win the game, win three tile boards in a row (horizontally, vertically, or diagonally).</li>
+    </ol>
+    <p>Have fun!</p>
+  </div>
+</div>
 
-    <!-- Your original How To Play modal, untouched -->
-    <div id="howToPlayModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>How to Play Super Tic-Tac-Toe</h2>
-            <ol>
-                <li>The game is played on a 3x3 grid of 3x3 Tic-Tac-Toe boards.</li>
-                <li>To start, Player 1 can place their X mark in the center tile on any cell.</li>
-                <li>The board where the next player must play is determined by the cell chosen by the previous player. For example, if a player places their mark in the top-left cell of any board, the next player must play in the top-left tile of the board.</li>
-                <li>If a player is sent to a tile that is already won or full, they can choose any available cell on any board.</li>
-                <li>To win a tile, get three of your marks in a row (horizontally, vertically, or diagonally).</li>
-                <li>To win the game, win three tile boards in a row (horizontally, vertically, or diagonally).</li>
-            </ol>
-            <p>Have fun!</p>
-        </div>
-    </div>
+<script type="module">
+// ============================================================
+// Firebase setup
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, onValue, update, get, onDisconnect, remove, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    <script type="module">
-        // ----- Firebase -----
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import {
-            getDatabase, ref, set, onValue, update, get, onDisconnect, remove
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyAHlelgAZfwFhUpCRSLV5HjOooGF8YcOGM",
+  authDomain: "tictac-1205b.firebaseapp.com",
+  databaseURL: "https://tictac-1205b-default-rtdb.firebaseio.com",
+  projectId: "tictac-1205b",
+  storageBucket: "tictac-1205b.firebasestorage.app",
+  messagingSenderId: "256644527146",
+  appId: "1:256644527146:web:06d5a2cd7cdda899d1bf53",
+  measurementId: "G-NSLC9LEJZY"
+};
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHlelgAZfwFhUpCRSLV5HjOooGF8YcOGM",
-            authDomain: "tictac-1205b.firebaseapp.com",
-            databaseURL: "https://tictac-1205b-default-rtdb.firebaseio.com",
-            projectId: "tictac-1205b",
-            storageBucket: "tictac-1205b.firebasestorage.app",
-            messagingSenderId: "256644527146",
-            appId: "1:256644527146:web:06d5a2cd7cdda899d1bf53",
-            measurementId: "G-NSLC9LEJZY"
-        };
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+console.log("%cSuper Tic-Tac-Toe v2.0 loaded", "color:#e63946;font-weight:bold;font-size:14px;");
 
-        // ----- DOM refs from your original code -----
-        const gameBoard = document.getElementById('game-board');
-        const statusDisplay = document.getElementById('status');
-        const messageDisplay = document.getElementById('message');
-        const playAgainButton = document.getElementById('play-again');
-        const modal = document.getElementById('howToPlayModal');
-        const closeButton = document.getElementsByClassName('close')[0];
-        const lobby = document.getElementById('lobby');
-        const waiting = document.getElementById('waiting');
-        const gameContainer = document.getElementById('game-container');
-        const lobbyError = document.getElementById('lobby-error');
-        const roomCodeDisplay = document.getElementById('room-code-display');
+// ============================================================
+// DOM
+// ============================================================
+const $ = (id) => document.getElementById(id);
+const screens = {
+  lobby: $('lobby'),
+  waiting: $('waiting'),
+  coin: $('coin-screen'),
+  game: $('game'),
+};
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => {
+    el.classList.toggle('active', k === name);
+    el.classList.toggle('flex', k === name && (name === 'waiting' || name === 'coin'));
+  });
+}
 
-        // ----- Game state (now driven by Firebase) -----
-        let currentPlayer = 'X';
-        let boardTracker = 4;
-        let gameActive = true;
-        let theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
+const createBtn = $('create-btn');
+const createLabel = $('create-label');
+const joinBtn = $('join-btn');
+const joinLabel = $('join-label');
+const codeInput = $('code-input');
+const lobbyError = $('lobby-error');
+const roomCodeDisplay = $('room-code-display');
+const cancelBtn = $('cancel-btn');
+const rulesBtn = $('rules-btn');
+const rulesModal = $('rulesModal');
+const rulesClose = $('rules-close');
+const coinEl = $('coin');
+const coinResultText = $('coin-result-text');
+const roomPill = $('room-pill');
+const youPill = $('you-pill');
+const messageEl = $('message');
+const boardEl = $('board');
+const statusEl = $('status');
+const playAgainBtn = $('play-again');
 
-        // ----- Multiplayer state -----
-        let roomCode = null;
-        let mySymbol = null;  // 'X' or 'O'
-        let unsubscribe = null;
-        let applyingRemote = false; // prevents echoing local updates
+// ============================================================
+// Game state
+// ============================================================
+let roomCode = null;
+let mySymbol = null;       // 'X' or 'O' - assigned by coin flip
+let myRole = null;         // 'host' or 'guest'
+let unsubscribe = null;
+let coinAnimationDone = false;
+let modalShownThisGame = false;
 
-        // ----- Helpers -----
-        function randomCode() {
-            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-            return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+// Local mirror of game state
+let cells = Array(9).fill().map(() => Array(9).fill(null)); // null = empty, 'X' or 'O' = played
+let miniWinners = Array(9).fill(null);                       // null | 'X' | 'O' | 'T'
+let nextBoard = 4;
+let currentPlayer = 'X';
+let winner = null;
+
+// ============================================================
+// Helpers
+// ============================================================
+function randomCode() {
+  // No confusable chars (no 0/O, 1/I/L)
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  return Array.from({length: 4}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+const WIN_LINES = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+function checkLine(arr, target) { return WIN_LINES.some(line => line.every(i => arr[i] === target)); }
+function isFull(arr) { return arr.every(v => v !== null && v !== undefined); }
+
+function blankGameState() {
+  return {
+    // Stored as flat 81-cell array; we use "" for empty (Firebase strips null)
+    cellsFlat: Array(81).fill(""),
+    miniWinners: Array(9).fill(""),
+    nextBoard: 4,
+    currentPlayer: 'X',
+    winner: ""
+  };
+}
+
+function spinnerOn(btn, label) {
+  btn.disabled = true;
+  const original = label.textContent;
+  btn.dataset.originalLabel = original;
+  label.innerHTML = '<span class="spinner"></span> ' + original.toUpperCase();
+}
+function spinnerOff(btn, label) {
+  btn.disabled = false;
+  if (btn.dataset.originalLabel) {
+    label.textContent = btn.dataset.originalLabel;
+    delete btn.dataset.originalLabel;
+  }
+}
+
+// ============================================================
+// Rules modal
+// ============================================================
+rulesBtn.addEventListener('click', () => rulesModal.classList.add('active'));
+rulesClose.addEventListener('click', () => rulesModal.classList.remove('active'));
+rulesModal.addEventListener('click', (e) => {
+  if (e.target === rulesModal) rulesModal.classList.remove('active');
+});
+
+// ============================================================
+// CREATE room — fast path using transaction (1 round-trip, atomic)
+// ============================================================
+createBtn.addEventListener('click', async () => {
+  lobbyError.textContent = '';
+  spinnerOn(createBtn, createLabel);
+
+  try {
+    let attempts = 0;
+    let finalCode = null;
+
+    // Try up to 5 codes via runTransaction, which is atomic (no race conditions)
+    // Almost always succeeds on first try since the keyspace is ~810,000.
+    while (attempts < 5 && !finalCode) {
+      const code = randomCode();
+      const result = await runTransaction(ref(db, `rooms/${code}`), (current) => {
+        if (current === null) {
+          // Free — claim it
+          return {
+            host: true,
+            guest: false,
+            coinFlip: null, // will be set when guest joins
+            state: blankGameState(),
+            createdAt: Date.now()
+          };
         }
+        // Already taken — abort
+        return; // returning undefined aborts the transaction
+      });
+      if (result.committed) {
+        finalCode = code;
+      }
+      attempts++;
+    }
 
-        function gameSnapshot() {
-            // theGame contains numbers (1-9) for empty cells and 'X'/'O' for played.
-            // Firebase strips nulls AND drops arrays that are all-null, so we
-            // serialize empty cells as the empty string "" — which it keeps.
-            return {
-                cells: theGame.map(board => board.map(v => (typeof v === 'string') ? v : "")),
-                boardTracker,
-                currentPlayer,
-                gameActive
-            };
+    if (!finalCode) {
+      throw new Error("Couldn't claim a room code. Try again.");
+    }
+
+    roomCode = finalCode;
+    myRole = 'host';
+    // mySymbol gets assigned after coin flip
+
+    // If host disconnects before guest joins, clean up
+    onDisconnect(ref(db, `rooms/${roomCode}`)).remove();
+
+    enterWaiting();
+  } catch (err) {
+    lobbyError.textContent = err.message || "Something went wrong. Try again.";
+    spinnerOff(createBtn, createLabel);
+  }
+});
+
+// ============================================================
+// JOIN room
+// ============================================================
+joinBtn.addEventListener('click', async () => {
+  lobbyError.textContent = '';
+  const code = codeInput.value.trim().toUpperCase();
+  if (code.length !== 4) {
+    lobbyError.textContent = "Code must be 4 characters.";
+    return;
+  }
+  spinnerOn(joinBtn, joinLabel);
+
+  try {
+    // Use a transaction: atomically claim the guest slot and write the coin flip
+    const result = await runTransaction(ref(db, `rooms/${code}`), (current) => {
+      if (current === null) return; // doesn't exist; abort
+      if (!current.host) return;    // host left; abort
+      if (current.guest) return;    // full; abort
+      current.guest = true;
+      // Coin flip: 50/50. heads = host is X, tails = guest is X.
+      const heads = Math.random() < 0.5;
+      current.coinFlip = {
+        result: heads ? 'heads' : 'tails',
+        hostSymbol: heads ? 'X' : 'O',
+        guestSymbol: heads ? 'O' : 'X',
+        firstPlayer: 'X', // X always goes first per the original rules
+        flippedAt: Date.now()
+      };
+      return current;
+    });
+
+    if (!result.committed) {
+      const snap = await get(ref(db, `rooms/${code}`));
+      if (!snap.exists()) lobbyError.textContent = "Room not found.";
+      else if (snap.val().guest) lobbyError.textContent = "Room is full.";
+      else lobbyError.textContent = "Couldn't join. Try again.";
+      spinnerOff(joinBtn, joinLabel);
+      return;
+    }
+
+    roomCode = code;
+    myRole = 'guest';
+    onDisconnect(ref(db, `rooms/${roomCode}/guest`)).set(false);
+
+    // We'll learn our symbol from the coinFlip block we just wrote
+    enterCoinFlip();
+  } catch (err) {
+    lobbyError.textContent = err.message || "Couldn't join. Try again.";
+    spinnerOff(joinBtn, joinLabel);
+  }
+});
+
+cancelBtn.addEventListener('click', async () => {
+  if (roomCode) await remove(ref(db, `rooms/${roomCode}`));
+  resetToLobby();
+});
+
+roomCodeDisplay.addEventListener('click', () => {
+  if (!roomCode) return;
+  navigator.clipboard?.writeText(roomCode);
+  const orig = roomCodeDisplay.textContent;
+  roomCodeDisplay.textContent = 'OK';
+  setTimeout(() => roomCodeDisplay.textContent = orig, 700);
+});
+
+// ============================================================
+// View transitions
+// ============================================================
+function enterWaiting() {
+  showScreen('waiting');
+  roomCodeDisplay.textContent = roomCode;
+  subscribeRoom();
+}
+
+function enterCoinFlip() {
+  showScreen('coin');
+  coinAnimationDone = false;
+  coinResultText.classList.remove('show');
+  coinResultText.textContent = '';
+  // Reset coin position (in case of replay)
+  coinEl.className = 'coin';
+  // We rely on the subscriber to read coinFlip and trigger the animation
+  subscribeRoom();
+}
+
+function enterGame() {
+  showScreen('game');
+  roomPill.textContent = `Room ${roomCode}`;
+  youPill.textContent = `You · ${mySymbol}`;
+  youPill.className = 'you-pill ' + (mySymbol === 'X' ? 'x' : 'o');
+  buildBoard();
+
+  // Auto-open the rules modal first time entering the game
+  if (!modalShownThisGame) {
+    modalShownThisGame = true;
+    rulesModal.classList.add('active');
+  }
+}
+
+function resetToLobby() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  roomCode = null;
+  mySymbol = null;
+  myRole = null;
+  coinAnimationDone = false;
+  modalShownThisGame = false;
+  codeInput.value = '';
+  lobbyError.textContent = '';
+  spinnerOff(createBtn, createLabel);
+  spinnerOff(joinBtn, joinLabel);
+  showScreen('lobby');
+}
+
+// ============================================================
+// Coin flip animation
+// ============================================================
+function playCoinFlip(flipData) {
+  if (coinAnimationDone) return;
+  coinAnimationDone = true;
+
+  // Determine my symbol
+  mySymbol = (myRole === 'host') ? flipData.hostSymbol : flipData.guestSymbol;
+
+  // Trigger the 3D coin spin
+  // Add 'flipping' + result class after a tiny delay so the transition kicks in
+  requestAnimationFrame(() => {
+    coinEl.classList.add('flipping', flipData.result);
+  });
+
+  // After the spin animation, reveal the result text
+  setTimeout(() => {
+    const iWonFlip = mySymbol === flipData.firstPlayer; // X goes first
+    coinResultText.textContent = iWonFlip
+      ? `YOU GOT ${mySymbol} · YOU GO FIRST`
+      : `YOU GOT ${mySymbol} · OPPONENT GOES FIRST`;
+    coinResultText.classList.add('show', iWonFlip ? 'winner-me' : 'winner-other');
+  }, 2500);
+
+  // Move to game after a beat
+  setTimeout(() => {
+    enterGame();
+    // Re-subscribe gets the latest game state; the existing one is fine
+  }, 4500);
+}
+
+// ============================================================
+// Build & render board
+// ============================================================
+function buildBoard() {
+  boardEl.innerHTML = '';
+  for (let b = 0; b < 9; b++) {
+    const big = document.createElement('div');
+    big.className = 'big-cell';
+    big.dataset.board = b;
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('button');
+      cell.className = 'small-cell';
+      cell.dataset.board = b;
+      cell.dataset.cell = c;
+      cell.textContent = c + 1; // numbered hint like original
+      cell.addEventListener('click', onCellClick);
+      big.appendChild(cell);
+    }
+    boardEl.appendChild(big);
+  }
+}
+
+function renderBoard() {
+  for (let b = 0; b < 9; b++) {
+    const big = boardEl.children[b];
+    const w = miniWinners[b];
+    big.classList.remove('won', 'won-x', 'won-o', 'active');
+
+    if (w && w !== 'T') {
+      big.classList.add('won', w === 'X' ? 'won-x' : 'won-o');
+      // Remove cells and add the big letter
+      if (!big.querySelector('.winner-letter')) {
+        big.innerHTML = '';
+        big.textContent = w;
+      }
+    } else {
+      // Make sure cells exist (re-create if needed e.g. after a replay)
+      if (big.children.length !== 9 || !big.querySelector('.small-cell')) {
+        big.innerHTML = '';
+        big.textContent = '';
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('button');
+          cell.className = 'small-cell';
+          cell.dataset.board = b;
+          cell.dataset.cell = c;
+          cell.textContent = c + 1;
+          cell.addEventListener('click', onCellClick);
+          big.appendChild(cell);
         }
+      }
 
-        function applySnapshot(snap) {
-            if (!snap || !snap.cells) return; // defensive: nothing to apply yet
-            applyingRemote = true;
-            // Restore theGame. Firebase may give us a sparse array or object,
-            // so we normalize to a 9×9 grid and turn empties back into numbers.
-            const rawCells = snap.cells;
-            theGame = Array.from({length: 9}, (_, b) => {
-                const row = rawCells[b] || {};
-                return Array.from({length: 9}, (_, i) => {
-                    const v = row[i];
-                    return (v === 'X' || v === 'O') ? v : (i + 1);
-                });
-            });
-            boardTracker = (snap.boardTracker === undefined) ? 4 : snap.boardTracker;
-            currentPlayer = snap.currentPlayer || 'X';
-            gameActive = snap.gameActive !== false;
+      const myTurn = currentPlayer === mySymbol && !winner;
+      const boardOpen = nextBoard === -1 || nextBoard === b;
+      if (myTurn && boardOpen && !w) big.classList.add('active');
 
-            // Re-render the board fresh, then re-apply won-tiles
-            createBoard();
-            for (let b = 0; b < 9; b++) {
-                // A board is "won" if every cell is the same string
-                const first = theGame[b][0];
-                if (typeof first === 'string' && theGame[b].every(c => c === first)) {
-                    replaceWithLargeLetter(b, first);
-                }
-            }
-            updateBoardStates();
-            updateStatusUI();
-            applyingRemote = false;
+      for (let c = 0; c < 9; c++) {
+        const cell = big.children[c];
+        const v = cells[b][c];
+        if (v === 'X' || v === 'O') {
+          cell.textContent = v;
+          cell.classList.add('played', v === 'X' ? 'played-x' : 'played-o');
+          cell.disabled = true;
+        } else {
+          cell.textContent = c + 1;
+          cell.classList.remove('played', 'played-x', 'played-o');
+          cell.disabled = !myTurn || !boardOpen || !!w;
         }
+      }
+    }
+  }
 
-        function updateStatusUI() {
-            if (!gameActive) {
-                // Determine winner from theGame, or could be a draw
-                const winner = detectWinner();
-                if (winner) {
-                    statusDisplay.textContent = `Player ${winner} wins!`;
-                } else {
-                    statusDisplay.textContent = `Game over`;
-                }
-                playAgainButton.style.display = 'inline-block';
-                messageDisplay.textContent = '';
-                return;
-            }
-            playAgainButton.style.display = 'none';
-            if (currentPlayer === mySymbol) {
-                statusDisplay.textContent = `Your turn (${mySymbol})`;
-            } else {
-                statusDisplay.textContent = `Opponent's turn (${currentPlayer})`;
-            }
-            if (boardTracker === -1) {
-                messageDisplay.textContent = currentPlayer === mySymbol
-                    ? "You can play in any available board"
-                    : "";
-            } else {
-                messageDisplay.textContent = '';
-            }
-        }
+  // Status & message
+  if (winner) {
+    if (winner === 'T') {
+      statusEl.textContent = "It's a draw!";
+    } else if (winner === mySymbol) {
+      statusEl.textContent = "You win! 🎉";
+    } else {
+      statusEl.textContent = "You lose.";
+    }
+    playAgainBtn.classList.add('show');
+    messageEl.textContent = '';
+  } else {
+    statusEl.textContent = currentPlayer === mySymbol
+      ? `Your turn (${mySymbol})`
+      : `Opponent's turn (${currentPlayer})`;
+    playAgainBtn.classList.remove('show');
 
-        function detectWinner() {
-            const winConditions = [
-                [0,1,2],[3,4,5],[6,7,8],
-                [0,3,6],[1,4,7],[2,5,8],
-                [0,4,8],[2,4,6]
-            ];
-            for (const sym of ['X','O']) {
-                for (const condition of winConditions) {
-                    if (condition.every(index => theGame[index].every(cell => cell === sym))) {
-                        return sym;
-                    }
-                }
-            }
-            return null;
-        }
+    if (nextBoard === -1) {
+      messageEl.textContent = currentPlayer === mySymbol
+        ? "You can play in any board"
+        : "";
+      messageEl.classList.remove('alert');
+    } else {
+      messageEl.textContent = '';
+    }
+  }
+}
 
-        // ----- Your original game functions (lightly adapted) -----
-        function createBoard() {
-            gameBoard.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
-                const bigCell = document.createElement('div');
-                bigCell.classList.add('big-cell');
-                bigCell.dataset.bigCell = i;
-                for (let j = 0; j < 9; j++) {
-                    const smallCell = document.createElement('button');
-                    smallCell.classList.add('small-cell');
-                    smallCell.dataset.bigCell = i;
-                    smallCell.dataset.smallCell = j;
-                    smallCell.textContent = theGame[i][j];
-                    smallCell.addEventListener('click', handleCellClick);
-                    bigCell.appendChild(smallCell);
-                }
-                gameBoard.appendChild(bigCell);
-            }
-        }
+// ============================================================
+// Move handler
+// ============================================================
+async function onCellClick(e) {
+  if (winner) return;
+  if (currentPlayer !== mySymbol) return;
+  const b = parseInt(e.currentTarget.dataset.board);
+  const c = parseInt(e.currentTarget.dataset.cell);
+  if (miniWinners[b]) return;
+  if (cells[b][c]) return;
+  if (nextBoard !== -1 && nextBoard !== b) return;
 
-        function handleCellClick(event) {
-            const bigCell = parseInt(event.target.dataset.bigCell);
-            const smallCell = parseInt(event.target.dataset.smallCell);
-            if (!gameActive || typeof theGame[bigCell][smallCell] === 'string') return;
+  // Compute new state locally
+  const newCellsFlat = [];
+  for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) {
+    newCellsFlat.push(cells[i][j] || "");
+  }
+  newCellsFlat[b * 9 + c] = mySymbol;
 
-            // Multiplayer: only let the player whose turn it is move
-            if (currentPlayer !== mySymbol) {
-                messageDisplay.textContent = "Not your turn";
-                return;
-            }
+  const newMiniWinners = miniWinners.slice();
+  // Check that mini board
+  const slice = newCellsFlat.slice(b * 9, b * 9 + 9);
+  if (checkLine(slice, mySymbol)) newMiniWinners[b] = mySymbol;
+  else if (slice.every(v => v !== "")) newMiniWinners[b] = 'T';
 
-            if (boardTracker !== -1 && bigCell !== boardTracker && !theGame[boardTracker].every(cell => typeof cell === 'string')) {
-                messageDisplay.textContent = `You must play in board ${boardTracker + 1}`;
-                return;
-            }
-            theGame[bigCell][smallCell] = currentPlayer;
-            event.target.textContent = currentPlayer;
-            event.target.disabled = true;
-            checkEntireTile(bigCell);
-            if (checkWin()) {
-                gameActive = false;
-                statusDisplay.textContent = `Player ${currentPlayer} wins!`;
-                playAgainButton.style.display = 'inline-block';
-                messageDisplay.textContent = '';
-                pushState();
-                return;
-            }
-            boardTracker = smallCell;
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
-            if (theGame[boardTracker].every(cell => typeof cell === 'string')) {
-                messageDisplay.textContent = "You can play in any available board for this turn";
-                boardTracker = -1;
-            } else {
-                messageDisplay.textContent = '';
-            }
-            updateBoardStates();
-            updateStatusUI();
-            pushState();
-        }
+  // Check overall winner — ties on mini boards don't contribute
+  const linePiece = (idx) => newMiniWinners[idx] === 'T' ? null : (newMiniWinners[idx] || null);
+  let newWinner = "";
+  if (WIN_LINES.some(line => line.every(i => linePiece(i) === mySymbol))) newWinner = mySymbol;
+  else if (newMiniWinners.every(w => w !== null && w !== "")) newWinner = 'T';
 
-        function checkEntireTile(boardTracker) {
-            const winConditions = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
-            ];
-            for (let condition of winConditions) {
-                if (condition.every(index => theGame[boardTracker][index] === currentPlayer)) {
-                    theGame[boardTracker].fill(currentPlayer);
-                    replaceWithLargeLetter(boardTracker, currentPlayer);
-                    break;
-                }
-            }
-        }
-        function replaceWithLargeLetter(boardTracker, player) {
-            const bigCell = document.querySelector(`.big-cell[data-big-cell="${boardTracker}"]`);
-            bigCell.innerHTML = '';
-            bigCell.classList.add('won-cell');
-            bigCell.textContent = player;
-        }
-        function checkWin() {
-            const winConditions = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8],
-                [0, 3, 6], [1, 4, 7], [2, 5, 8],
-                [0, 4, 8], [2, 4, 6]
-            ];
-            for (let condition of winConditions) {
-                if (condition.every(index =>
-                    theGame[index].every(cell => cell === currentPlayer)
-                )) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        function updateBoardStates() {
-            document.querySelectorAll('.small-cell').forEach(cell => {
-                const bigCell = parseInt(cell.dataset.bigCell);
-                const smallCell = parseInt(cell.dataset.smallCell);
-                const cellIsTaken = typeof theGame[bigCell][smallCell] === 'string';
-                const myTurn = currentPlayer === mySymbol;
-                const boardAllowed = (boardTracker === -1 || bigCell === boardTracker);
-                cell.disabled = !gameActive || cellIsTaken || !myTurn || !boardAllowed;
-            });
-        }
-        function resetGame() {
-            currentPlayer = 'X';
-            boardTracker = 4;
-            gameActive = true;
-            theGame = Array(9).fill().map(() => Array(9).fill().map((_, i) => i + 1));
-            createBoard();
-            updateBoardStates();
-            updateStatusUI();
-            playAgainButton.style.display = 'none';
-            pushState();
-        }
+  // Next board: small-cell index, unless that board is already decided
+  let newNextBoard = c;
+  if (newMiniWinners[newNextBoard]) newNextBoard = -1;
 
-        // ----- Push state to Firebase -----
-        function pushState() {
-            if (applyingRemote || !roomCode) return;
-            update(ref(db, `rooms/${roomCode}/state`), gameSnapshot());
-        }
+  await update(ref(db, `rooms/${roomCode}/state`), {
+    cellsFlat: newCellsFlat,
+    miniWinners: newMiniWinners.map(v => v === null ? "" : v),
+    nextBoard: newNextBoard,
+    currentPlayer: mySymbol === 'X' ? 'O' : 'X',
+    winner: newWinner
+  });
+}
 
-        // ----- Lobby logic -----
-        document.getElementById('create-btn').addEventListener('click', async () => {
-            lobbyError.textContent = '';
-            let code, snap;
-            for (let i = 0; i < 10; i++) {
-                code = randomCode();
-                snap = await get(ref(db, `rooms/${code}`));
-                if (!snap.exists()) break;
-            }
-            if (snap && snap.exists()) {
-                lobbyError.textContent = "Couldn't create a room, try again.";
-                return;
-            }
-            roomCode = code;
-            mySymbol = 'X';
-            await set(ref(db, `rooms/${roomCode}`), {
-                players: { X: true, O: false },
-                state: gameSnapshot()
-            });
-            onDisconnect(ref(db, `rooms/${roomCode}`)).remove();
-            showWaiting();
-        });
+// ============================================================
+// Play again
+// ============================================================
+playAgainBtn.addEventListener('click', async () => {
+  if (!roomCode) return;
+  await update(ref(db, `rooms/${roomCode}/state`), blankGameState());
+});
 
-        document.getElementById('join-btn').addEventListener('click', async () => {
-            lobbyError.textContent = '';
-            const code = document.getElementById('code-input').value.trim().toUpperCase();
-            if (code.length !== 4) {
-                lobbyError.textContent = "Code must be 4 characters.";
-                return;
-            }
-            const snap = await get(ref(db, `rooms/${code}`));
-            if (!snap.exists()) {
-                lobbyError.textContent = "Room not found.";
-                return;
-            }
-            const data = snap.val();
-            if (data.players.O) {
-                lobbyError.textContent = "Room is full.";
-                return;
-            }
-            roomCode = code;
-            mySymbol = 'O';
-            await update(ref(db, `rooms/${roomCode}/players`), { O: true });
-            onDisconnect(ref(db, `rooms/${roomCode}/players/O`)).set(false);
-            showGame();
-        });
+// ============================================================
+// Subscribe
+// ============================================================
+function subscribeRoom() {
+  if (unsubscribe) unsubscribe();
+  unsubscribe = onValue(ref(db, `rooms/${roomCode}`), (snap) => {
+    if (!snap.exists()) {
+      alert('The other player left the room.');
+      resetToLobby();
+      return;
+    }
+    const data = snap.val();
 
-        document.getElementById('cancel-btn').addEventListener('click', async () => {
-            if (roomCode) await remove(ref(db, `rooms/${roomCode}`));
-            roomCode = null;
-            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-            waiting.style.display = 'none';
-            lobby.style.display = 'block';
-        });
+    // Move host from waiting -> coin flip once guest joins and coin flip exists
+    if (data.host && data.guest && data.coinFlip && !coinAnimationDone && screens.game.classList.contains('active') === false && screens.coin.classList.contains('active') === false) {
+      enterCoinFlip();
+    }
 
-        roomCodeDisplay.addEventListener('click', () => {
-            if (!roomCode) return;
-            navigator.clipboard?.writeText(roomCode);
-            const orig = roomCodeDisplay.textContent;
-            roomCodeDisplay.textContent = 'COPIED';
-            setTimeout(() => roomCodeDisplay.textContent = orig, 900);
-        });
+    // Trigger coin animation when we have flip data
+    if (data.coinFlip && screens.coin.classList.contains('active') && !coinAnimationDone) {
+      playCoinFlip(data.coinFlip);
+    }
 
-        // ----- View switching -----
-        function showWaiting() {
-            lobby.style.display = 'none';
-            waiting.style.display = 'block';
-            gameContainer.style.display = 'none';
-            roomCodeDisplay.textContent = roomCode;
-            subscribe();
-        }
-        function showGame() {
-            lobby.style.display = 'none';
-            waiting.style.display = 'none';
-            gameContainer.style.display = 'block';
-            // Show the modal only on first entry, like your original code
-            modal.style.display = "block";
-            subscribe();
-        }
+    // Apply game state if we're in the game screen
+    if (data.state && (screens.game.classList.contains('active') || coinAnimationDone)) {
+      applyState(data.state);
+      // Refresh "play again" reset (state cleared back to blank): wipe flag so
+      // the modal doesn't re-show, the play-again button updates via renderBoard.
+    }
+  });
+}
 
-        // ----- Realtime subscribe -----
-        function subscribe() {
-            if (unsubscribe) unsubscribe();
-            unsubscribe = onValue(ref(db, `rooms/${roomCode}`), (snap) => {
-                if (!snap.exists()) {
-                    alert('The other player left the room.');
-                    location.reload();
-                    return;
-                }
-                const data = snap.val();
-                // Move from waiting to game once both players are present
-                if (data.players.X && data.players.O && gameContainer.style.display === 'none') {
-                    showGame();
-                }
-                if (data.players.X && data.players.O) {
-                    applySnapshot(data.state);
-                }
-            });
-        }
+function applyState(state) {
+  if (!state) return;
+  const flat = state.cellsFlat || Array(81).fill("");
+  cells = Array.from({length: 9}, (_, b) =>
+    Array.from({length: 9}, (_, c) => {
+      const v = flat[b * 9 + c];
+      return (v === 'X' || v === 'O') ? v : null;
+    })
+  );
+  miniWinners = (state.miniWinners || Array(9).fill("")).map(v => {
+    if (v === 'X' || v === 'O' || v === 'T') return v;
+    return null;
+  });
+  nextBoard = (state.nextBoard === undefined || state.nextBoard === null) ? 4 : state.nextBoard;
+  currentPlayer = state.currentPlayer || 'X';
+  winner = (state.winner === 'X' || state.winner === 'O' || state.winner === 'T') ? state.winner : null;
+  if (screens.game.classList.contains('active')) {
+    renderBoard();
+  }
+}
 
-        // ----- Your original modal handlers -----
-        closeButton.onclick = function() {
-            modal.style.display = "none";
-        }
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        playAgainButton.addEventListener('click', resetGame);
-    </script>
+</script>
 </body>
 </html>
