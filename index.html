@@ -268,9 +268,10 @@
 
         function gameSnapshot() {
             // theGame contains numbers (1-9) for empty cells and 'X'/'O' for played.
-            // We serialize numbers as null so Firebase doesn't drop them.
+            // Firebase strips nulls AND drops arrays that are all-null, so we
+            // serialize empty cells as the empty string "" — which it keeps.
             return {
-                cells: theGame.map(board => board.map(v => (typeof v === 'string') ? v : null)),
+                cells: theGame.map(board => board.map(v => (typeof v === 'string') ? v : "")),
                 boardTracker,
                 currentPlayer,
                 gameActive
@@ -278,12 +279,21 @@
         }
 
         function applySnapshot(snap) {
+            if (!snap || !snap.cells) return; // defensive: nothing to apply yet
             applyingRemote = true;
-            // Restore theGame: nulls become their original number (i+1)
-            theGame = snap.cells.map((board, bi) => board.map((v, i) => v === null ? (i + 1) : v));
-            boardTracker = snap.boardTracker;
-            currentPlayer = snap.currentPlayer;
-            gameActive = snap.gameActive;
+            // Restore theGame. Firebase may give us a sparse array or object,
+            // so we normalize to a 9×9 grid and turn empties back into numbers.
+            const rawCells = snap.cells;
+            theGame = Array.from({length: 9}, (_, b) => {
+                const row = rawCells[b] || {};
+                return Array.from({length: 9}, (_, i) => {
+                    const v = row[i];
+                    return (v === 'X' || v === 'O') ? v : (i + 1);
+                });
+            });
+            boardTracker = (snap.boardTracker === undefined) ? 4 : snap.boardTracker;
+            currentPlayer = snap.currentPlayer || 'X';
+            gameActive = snap.gameActive !== false;
 
             // Re-render the board fresh, then re-apply won-tiles
             createBoard();
